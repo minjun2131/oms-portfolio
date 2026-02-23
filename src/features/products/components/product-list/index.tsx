@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/select";
 import type { Product } from "@/features/products/types";
 
-import { mockProducts } from "@/features/products/constants/mock-data";
+import { mockProducts } from "@/mocks/products";
 
 const getStatusBadge = (status: Product["status"]) => {
   switch (status) {

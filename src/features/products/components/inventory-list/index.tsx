@@ -27,8 +27,8 @@ import {
 } from "@/components/ui/select";
 import type { Product } from "@/features/products/types";
 
-import { mockInventoryItems } from "@/features/products/constants/mock-data";
-import type { InventoryItem } from "@/features/products/constants/mock-data";
+import { mockInventoryItems } from "@/mocks/products";
+import type { InventoryItem } from "@/mocks/products";
 
 export function InventoryList() {
   const [items, setItems] = useState<InventoryItem[]>(mockInventoryItems);

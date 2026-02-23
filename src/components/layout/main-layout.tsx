@@ -1,32 +1,19 @@
-"use client";
-
-import { usePathname } from "next/navigation";
 import { Header } from "@/components/layout/header";
 import { Sidebar } from "@/components/layout/sidebar";
+import { LayoutContent } from "./layout-content";
 
 interface MainLayoutProps {
   children: React.ReactNode;
 }
 
+// 이 컴포넌트는 서버 컴포넌트가 되어 async Header를 정상적으로 렌더링할 수 있습니다.
 export function MainLayout({ children }: MainLayoutProps) {
-  const pathname = usePathname();
-  // 로그인 페이지 등 Sidebar/Header가 필요 없는 페이지 목록
-  const hideLayoutPaths = ["/login", "/register"];
-  const shouldHideLayout = hideLayoutPaths.includes(pathname);
-
-  if (shouldHideLayout) {
-    return <>{children}</>;
-  }
-
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans antialiased">
-      <Sidebar />
-      <div className="flex-1 flex flex-col min-h-screen transition-all duration-300 lg:ml-64">
-        <Header />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-          {children}
-        </main>
-      </div>
-    </div>
+    <LayoutContent 
+      header={<Header />} 
+      sidebar={<Sidebar />}
+    >
+      {children}
+    </LayoutContent>
   );
 }

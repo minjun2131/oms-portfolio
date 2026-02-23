@@ -45,7 +45,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { mockStores } from "@/features/stores/constants/mock-data";
+import { mockStores } from "@/mocks/stores";
 
 const summaryStats = [
   {
