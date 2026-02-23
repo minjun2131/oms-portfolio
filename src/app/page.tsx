@@ -1,16 +1,16 @@
-"use client";
-
 import {
   Package,
   ShoppingCart,
   Users,
   CreditCard,
 } from "lucide-react";
-import { StatsCard } from "@/features/dashboard/components/stats-card";
-import { RecentOrders } from "@/features/dashboard/components/recent-orders";
-import { TopProducts } from "@/features/dashboard/components/top-products";
-import { SalesChart } from "@/features/dashboard/components/sales-chart";
-import { QuickActions } from "@/features/dashboard/components/quick-actions";
+import {
+  StatsCard,
+  RecentOrders,
+  TopProducts,
+  SalesChart,
+  QuickActions,
+} from "@/features/dashboard/components";
 
 export default function HomePage() {
   return (
