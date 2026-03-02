@@ -1,13 +1,30 @@
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { Bell, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { getUserProfile } from "@/features/users/services/users.service";
+import { getUserById } from "@/features/users/services/get-user-by-id";
+import { createClient } from "@/lib/supabase/server";
+import { getAuth } from "@/features/auth/services/get-auth";
+import { ROUTES } from "@/constants/url";
 
 export async function Header() {
-  // 3단계 사용 계층: Service 함수를 호출해 유저 정보를 가져옵니다 (서버 컴포넌트)
-  // 실제 서비스라면 로그인 사용자의 세션 ID(user.id)를 넣겠지만, 테스트용으로 직접 Mock ID를 주입합니다.
-  const profile = await getUserProfile("550e8400-e29b-41d4-a716-446655440000");
+  const supabase = await createClient();
+  const user = await getAuth(supabase);
+  
+  // 현재 경로 확인 (미들웨어에서 설정한 x-pathname 헤더 사용)
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "";
+  const isAuthPage = pathname === ROUTES.LOGIN || pathname === ROUTES.REGISTER;
+
+  // 인증되지 않은 경우 로그인 페이지로 리다이렉트 (로그인/회원가입 페이지 제외)
+  if (!user && !isAuthPage) {
+    redirect(ROUTES.LOGIN);
+  }
+
+  // 로그인된 유저가 있다면 프로필 정보 조회
+  const profile = user ? await getUserById(supabase, user.id) : null;
 
   return (
     <header className="sticky top-0 z-20 hidden border-b border-border bg-card/80 backdrop-blur-sm lg:block">

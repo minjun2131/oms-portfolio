@@ -7,19 +7,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ROUTES } from "@/constants/url";
+import { useSignIn } from "@/features/auth/hooks/mutations/use-sign-in";
+import { useRouter } from "next/navigation";
 
 export function LoginForm() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const { mutateAsync: signIn, isPending: isLoading } = useSignIn();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    // TODO: 실제 로그인 API 연동 필요
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsLoading(false);
+    try {
+      await signIn({ email, password });
+      router.push(ROUTES.HOME);
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      alert(error.message || "로그인 중 오류가 발생했습니다.");
+    }
   };
 
   return (

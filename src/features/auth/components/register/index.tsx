@@ -7,16 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ROUTES } from "@/constants/url";
+import { useSignUp } from "@/features/auth/hooks/mutations/use-sign-up";
+import { useRouter } from "next/navigation";
 
 export function RegisterForm() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [storeName, setStoreName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  const { mutateAsync: signUp, isPending: isLoading } = useSignUp();
 
   const passwordRequirements = [
     { label: "8자 이상", met: password.length >= 8 },
@@ -33,10 +37,24 @@ export function RegisterForm() {
     e.preventDefault();
     if (!isFormValid) return;
 
-    setIsLoading(true);
-    // TODO: 실제 회원가입 API 연동 필요
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsLoading(false);
+    try {
+      await signUp({
+        email,
+        password,
+        options: {
+          data: {
+            store_name: storeName,
+          },
+        },
+      });
+      // 미들웨어가 인증 여부를 판단합니다.
+      // 이메일 인증 OFF → 자동 로그인되어 "/" 으로 이동
+      // 이메일 인증 ON  → 미인증 상태이므로 미들웨어가 /login 으로 리다이렉트
+      router.push(ROUTES.HOME);
+    } catch (error: any) {
+      console.error("Signup failed:", error);
+      alert(error.message || "회원가입 중 오류가 발생했습니다.");
+    }
   };
 
   return (
@@ -225,7 +243,7 @@ export function RegisterForm() {
           <Checkbox
             id="terms"
             checked={agreedToTerms}
-            onChange={(e) => setAgreedToTerms(e.target.checked)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAgreedToTerms(e.target.checked)}
             className="mt-0.5"
           />
           <label

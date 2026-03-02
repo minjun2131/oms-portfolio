@@ -1,39 +1,68 @@
+import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import type { Database } from "@/types/database.types";
 
-/**
- * 미들웨어 - 인증 및 라우트 보호
- */
-export function middleware(request: NextRequest) {
-  // 인증이 필요한 경로
-  const protectedPaths = ["/dashboard", "/products", "/orders", "/customers", "/inventory"];
-  // 인증 페이지 (로그인 상태에서 접근 불가)
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", pathname);
+
+  let response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          // x-pathname 헤더가 유실되지 않도록 requestHeaders 유지
+          response = NextResponse.next({
+            request: {
+              headers: requestHeaders,
+            },
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const isAuthenticated = !!user;
+  
+  const protectedPaths = ["/", "/dashboard", "/products", "/orders", "/customers", "/inventory"];
   const authPaths = ["/login", "/register"];
 
-  const { pathname } = request.nextUrl;
+  // 1. 보호된 경로 접근 제어
+  const isProtectedPath = protectedPaths.some((path) => 
+    path === "/" ? pathname === "/" : pathname.startsWith(path)
+  );
 
-  // TODO: 실제 인증 로직 구현
-  // const token = request.cookies.get("auth-token");
-  // const isAuthenticated = Boolean(token);
-
-  // 임시: 항상 인증되지 않은 상태로 처리
-  const isAuthenticated = false;
-
-  // 보호된 경로에 비인증 접근 시 로그인 페이지로 리다이렉트
-  if (protectedPaths.some((path) => pathname.startsWith(path)) && !isAuthenticated) {
+  if (isProtectedPath && !isAuthenticated) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // 인증 페이지에 인증된 사용자 접근 시 대시보드로 리다이렉트
+  // 2. 로그인 유저가 로그인/회원가입 페이지 접근 시 메인으로 이동 ("/dashboard" 라우트가 존재하지 않으므로 "/" 로 수정)
   if (authPaths.some((path) => pathname.startsWith(path)) && isAuthenticated) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
-  matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
