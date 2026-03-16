@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -25,15 +25,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Product } from "@/features/products/types";
-
-import { mockInventoryItems } from "@/mocks/products";
-import type { InventoryItem } from "@/mocks/products";
+import type { InventoryItem } from "@/features/products/types";
+import { useProducts } from "@/features/products/hooks/queries/use-products";
 
 export function InventoryList() {
-  const [items, setItems] = useState<InventoryItem[]>(mockInventoryItems);
+  const { data: products = [], isLoading } = useProducts();
+  const [items, setItems] = useState<InventoryItem[]>([]);
   const [adjustments, setAdjustments] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState("");
+
+  // 상품 데이터가 로드되면 재고 아이템으로 변환
+  useEffect(() => {
+    if (products.length > 0) {
+      setItems(
+        products.map((product) => ({
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          sku: product.sku,
+          imageUrl: product.imageUrl,
+          currentStock: product.stock,
+          minStock: 15, // TODO: DB에 min_stock 컬럼 추가 시 연동
+        }))
+      );
+    }
+  }, [products]);
 
   const lowStockCount = items.filter(
     (item) => item.currentStock <= item.minStock && item.currentStock > 0

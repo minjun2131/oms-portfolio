@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -34,7 +34,10 @@ import {
 } from "@/components/ui/select";
 import type { Product } from "@/features/products/types";
 
-import { mockProducts } from "@/mocks/products";
+import { useProducts } from "@/features/products/hooks/queries/use-products";
+import { deleteProductAction } from "@/features/products/actions/delete-product";
+import { useQueryClient } from "@tanstack/react-query";
+import { productsQueryKeys } from "@/features/products/constants/query-keys";
 
 const getStatusBadge = (status: Product["status"]) => {
   switch (status) {
@@ -61,9 +64,29 @@ const getStatusBadge = (status: Product["status"]) => {
 };
 
 export function ProductList() {
-  const [products] = useState<Product[]>(mockProducts);
+  const { data: products = [], isLoading } = useProducts();
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
+
+  const handleDelete = (productId: string, productName: string) => {
+    if (!confirm(`"${productName}" 상품을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) {
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await deleteProductAction(productId);
+      if (result.success) {
+        // React Query 캐시 무효화하여 목록 즉시 갱신
+        queryClient.invalidateQueries({ queryKey: productsQueryKeys.all });
+        // 선택 목록에서도 제거
+        setSelectedProducts((prev) => prev.filter((id) => id !== productId));
+      } else {
+        alert(result.message);
+      }
+    });
+  };
 
   const toggleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -146,6 +169,13 @@ export function ProductList() {
       </Card>
 
       {/* Products Table */}
+      {isLoading ? (
+        <Card className="border-border/50 shadow-sm">
+          <CardContent className="flex items-center justify-center py-20">
+            <p className="text-muted-foreground">상품 목록을 불러오는 중...</p>
+          </CardContent>
+        </Card>
+      ) : (
       <Card className="border-border/50 shadow-sm">
         <CardHeader className="border-b border-border/50 pb-4">
           <div className="flex items-center justify-between">
@@ -186,7 +216,7 @@ export function ProductList() {
                     상품 정보
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                    카테고리
+                    판매처 / 카테고리
                   </th>
                   <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
                     판매가
@@ -230,9 +260,14 @@ export function ProductList() {
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <span className="text-sm text-muted-foreground">
-                        {product.category}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-medium text-foreground">
+                          {product.shopName || "-"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {product.category}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-4 py-4 text-right whitespace-nowrap">
                       <span className="font-medium text-foreground">
@@ -269,13 +304,18 @@ export function ProductList() {
                             <Eye className="h-4 w-4" />
                             상세 보기
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2 focus:bg-accent focus:text-accent-foreground cursor-pointer flex items-center">
-                            <Edit2 className="h-4 w-4" />
-                            수정하기
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2 text-destructive focus:bg-destructive focus:text-destructive-foreground cursor-pointer flex items-center">
+                          <Link href={`/products/${product.id}/edit`}>
+                            <DropdownMenuItem className="gap-2 focus:bg-accent focus:text-accent-foreground cursor-pointer flex items-center">
+                              <Edit2 className="h-4 w-4" />
+                              수정하기
+                            </DropdownMenuItem>
+                          </Link>
+                          <DropdownMenuItem
+                            className="gap-2 text-destructive focus:bg-destructive focus:text-destructive-foreground cursor-pointer flex items-center"
+                            onClick={() => handleDelete(product.id, product.name)}
+                          >
                             <Trash2 className="h-4 w-4" />
-                            삭제하기
+                            {isPending ? "삭제 중..." : "삭제하기"}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -339,6 +379,7 @@ export function ProductList() {
           </div>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }
