@@ -102,14 +102,16 @@ DropdownMenuContent.displayName = "DropdownMenuContent"
 
 export const DropdownMenuItem = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, children, onClick, ...props }, ref) => {
+  React.HTMLAttributes<HTMLDivElement> & { disabled?: boolean }
+>(({ className, children, onClick, disabled, ...props }, ref) => {
   const { setOpen } = React.useContext(DropdownMenuContext)
 
   return (
     <div
       ref={ref}
+      data-disabled={disabled}
       onClick={(e) => {
+        if (disabled) return
         setOpen(false)
         onClick?.(e)
       }}

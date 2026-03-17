@@ -8,6 +8,8 @@ import {
   Package,
   ShoppingCart,
   Users,
+  Store,
+  Truck,
   BarChart3,
   Settings,
   HelpCircle,
@@ -33,7 +35,7 @@ const navItems: NavItem[] = [
   {
     label: "대시보드",
     icon: <LayoutDashboard className="h-5 w-5" />,
-    href: "/", // Modified from "/courses" to "/"
+    href: "/",
   },
   {
     label: "상품 관리",
@@ -50,16 +52,25 @@ const navItems: NavItem[] = [
     icon: <ShoppingCart className="h-5 w-5" />,
     href: "/orders",
     badge: 12,
+    children: [
+      { label: "주문 목록", href: "/orders" },
+      { label: "주문 등록", href: "/orders/new" },
+    ],
   },
   {
-    label: "고객 관리",
-    icon: <Users className="h-5 w-5" />,
-    href: "/customers",
+    label: "상점 관리",
+    icon: <Store className="h-5 w-5" />,
+    href: "/stores",
   },
   {
-    label: "매출 분석",
+    label: "배송 관리",
+    icon: <Truck className="h-5 w-5" />,
+    href: "/shipping",
+  },
+  {
+    label: "매출 리포트",
     icon: <BarChart3 className="h-5 w-5" />,
-    href: "/analytics",
+    href: "/reports",
   },
 ];
 
