@@ -48,7 +48,8 @@ export function OrderCreateForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const { data: productsData = [] } = useProducts();
+  const { data: productsResult } = useProducts();
+  const productsData = productsResult?.data ?? [];
   const productSuggestions = productsData.map((p: any) => ({
     product_id: p.id,
     shop_id: p.shop_id,

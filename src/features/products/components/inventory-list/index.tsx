@@ -13,7 +13,10 @@ import {
   Download,
   Plus,
   Minus,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,18 +30,42 @@ import {
 } from "@/components/ui/select";
 import type { InventoryItem } from "@/features/products/types";
 import { useProducts } from "@/features/products/hooks/queries/use-products";
+import type { Product } from "@/features/products/types";
+import type { GetProductsResult } from "@/features/products/services/get-products";
 
 export function InventoryList() {
-  const { data: products = [], isLoading } = useProducts();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const { 
+    data: result, 
+    isLoading 
+  } = useProducts({ 
+    search: searchQuery, 
+    category: categoryFilter,
+    page: currentPage,
+    limit: 10 
+  });
+
+  const products = result?.data ?? [];
+  const totalCount = result?.count ?? 0;
+  const totalPages = Math.ceil(totalCount / 10);
+
+  // 검색어나 필터가 변경되면 페이지를 1페이지로 리셋
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, categoryFilter]);
+
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [adjustments, setAdjustments] = useState<Record<string, number>>({});
-  const [searchQuery, setSearchQuery] = useState("");
 
   // 상품 데이터가 로드되면 재고 아이템으로 변환
   useEffect(() => {
     if (products.length > 0) {
       setItems(
-        products.map((product) => ({
+        products.map((product: Product) => ({
           id: product.id,
           name: product.name,
           category: product.category,
@@ -196,18 +223,7 @@ export function InventoryList() {
               />
             </div>
             <div className="flex gap-3">
-              <Select defaultValue="all">
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="재고 상태" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">전체</SelectItem>
-                  <SelectItem value="low">재고 부족</SelectItem>
-                  <SelectItem value="out">품절</SelectItem>
-                  <SelectItem value="normal">정상</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select defaultValue="all">
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="카테고리" />
                 </SelectTrigger>
@@ -217,6 +233,7 @@ export function InventoryList() {
                   <SelectItem value="stationery">문구</SelectItem>
                   <SelectItem value="sticker">스티커</SelectItem>
                   <SelectItem value="fabric">패브릭</SelectItem>
+                  <SelectItem value="acrylic">아크릴</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -351,6 +368,70 @@ export function InventoryList() {
                 ))}
               </tbody>
             </table>
+          </div>
+          {/* Pagination */}
+          <div className="flex items-center justify-center border-t border-border/50 px-4 py-6">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 bg-transparent hover:bg-primary/10 hover:text-primary border-border/50 transition-colors"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              {/* Generate page numbers */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const pageNum = i + 1;
+                const isSelected = currentPage === pageNum;
+                return (
+                  <Button
+                    key={pageNum}
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "h-9 w-9 transition-all duration-200",
+                      isSelected 
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90 border-primary shadow-sm" 
+                        : "bg-transparent hover:bg-primary/10 hover:text-primary border-border/50"
+                    )}
+                    onClick={() => setCurrentPage(pageNum)}
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+
+              {totalPages > 5 && <span className="px-2 text-muted-foreground">...</span>}
+              
+              {totalPages > 5 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "h-9 w-9 transition-all duration-200",
+                    currentPage === totalPages 
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90 border-primary shadow-sm" 
+                      : "bg-transparent hover:bg-primary/10 hover:text-primary border-border/50"
+                  )}
+                  onClick={() => setCurrentPage(totalPages)}
+                >
+                  {totalPages}
+                </Button>
+              )}
+
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 bg-transparent hover:bg-primary/10 hover:text-primary border-border/50 transition-colors"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages || totalPages === 0}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

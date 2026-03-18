@@ -17,8 +17,8 @@ export interface Product {
 }
 
 export interface ProductFilters {
-  category?: string;
-  status?: Product["status"];
+  category?: string | "all";
+  status?: Product["status"] | "all";
   search?: string;
   page?: number;
   limit?: number;

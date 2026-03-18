@@ -9,7 +9,6 @@ import {
   ShoppingCart,
   Users,
   Store,
-  Truck,
   BarChart3,
   Settings,
   HelpCircle,
@@ -61,11 +60,6 @@ const navItems: NavItem[] = [
     label: "상점 관리",
     icon: <Store className="h-5 w-5" />,
     href: "/stores",
-  },
-  {
-    label: "배송 관리",
-    icon: <Truck className="h-5 w-5" />,
-    href: "/shipping",
   },
   {
     label: "매출 리포트",

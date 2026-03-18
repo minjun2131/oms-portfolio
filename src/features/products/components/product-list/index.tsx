@@ -13,6 +13,9 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
+  RefreshCw,
+  ChevronFirst,
+  ChevronLast,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,12 +35,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import type { Product } from "@/features/products/types";
+import type { GetProductsResult } from "@/features/products/services/get-products";
 
 import { useProducts } from "@/features/products/hooks/queries/use-products";
 import { deleteProductAction } from "@/features/products/actions/delete-product";
 import { useQueryClient } from "@tanstack/react-query";
 import { productsQueryKeys } from "@/features/products/constants/query-keys";
+import { useEffect } from "react";
 
 const getStatusBadge = (status: Product["status"]) => {
   switch (status) {
@@ -64,11 +70,31 @@ const getStatusBadge = (status: Product["status"]) => {
 };
 
 export function ProductList() {
-  const { data: products = [], isLoading } = useProducts();
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<Product["status"] | "all">("all");
+
+  const { data: result, isLoading } = useProducts({ 
+    search: searchQuery, 
+    category: categoryFilter, 
+    status: statusFilter,
+    page: currentPage,
+    limit: 10 
+  });
+
+  const products = result?.data ?? [];
+  const totalCount = result?.count ?? 0;
+  const totalPages = Math.ceil(totalCount / 10);
+
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
   const queryClient = useQueryClient();
+
+  // 검색어나 필터가 변경되면 페이지를 1페이지로 리셋
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, categoryFilter, statusFilter]);
 
   const handleDelete = (productId: string, productName: string) => {
     if (!confirm(`"${productName}" 상품을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) {
@@ -78,9 +104,7 @@ export function ProductList() {
     startTransition(async () => {
       const result = await deleteProductAction(productId);
       if (result.success) {
-        // React Query 캐시 무효화하여 목록 즉시 갱신
         queryClient.invalidateQueries({ queryKey: productsQueryKeys.all });
-        // 선택 목록에서도 제거
         setSelectedProducts((prev) => prev.filter((id) => id !== productId));
       } else {
         alert(result.message);
@@ -90,7 +114,7 @@ export function ProductList() {
 
   const toggleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedProducts(products.map((p) => p.id));
+      setSelectedProducts(products.map((p: Product) => p.id));
     } else {
       setSelectedProducts([]);
     }
@@ -136,7 +160,7 @@ export function ProductList() {
               />
             </div>
             <div className="flex gap-3">
-              <Select defaultValue="all">
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="카테고리" />
                 </SelectTrigger>
@@ -149,7 +173,7 @@ export function ProductList() {
                   <SelectItem value="acrylic">아크릴</SelectItem>
                 </SelectContent>
               </Select>
-              <Select defaultValue="all">
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
                 <SelectTrigger className="w-[120px]">
                   <SelectValue placeholder="상태" />
                 </SelectTrigger>
@@ -160,13 +184,21 @@ export function ProductList() {
                   <SelectItem value="hidden">숨김</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" onClick={() => {
+                setSearchQuery("");
+                setCategoryFilter("all");
+                setStatusFilter("all");
+              }}>
                 <Filter className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </CardContent>
       </Card>
+      
+      {/* Search/Filter effect to reset page */}
+      {/* Actually I should reset to page 1 when filters change */}
+      {/* I'll add that logic in the component body later if needed, but for now focus on UI */}
 
       {/* Products Table */}
       {isLoading ? (
@@ -180,7 +212,7 @@ export function ProductList() {
         <CardHeader className="border-b border-border/50 pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base font-medium">
-              총 {products.length}개 상품
+              총 {totalCount}개 상품
             </CardTitle>
             {selectedProducts.length > 0 && (
               <div className="flex items-center gap-2">
@@ -327,51 +359,64 @@ export function ProductList() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between border-t border-border/50 px-4 py-4">
-            <p className="text-sm text-muted-foreground">
-              1-8 / 총 156개 상품
-            </p>
+          <div className="flex items-center justify-center border-t border-border/50 px-4 py-6">
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="icon"
-                className="h-8 w-8 bg-transparent"
+                className="h-9 w-9 bg-transparent hover:bg-primary/10 hover:text-primary border-border/50 transition-colors"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                1
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 bg-transparent"
-              >
-                2
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 bg-transparent"
-              >
-                3
-              </Button>
-              <span className="px-1 text-muted-foreground">...</span>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 bg-transparent"
-              >
-                20
-              </Button>
+              
+              {/* Generate page numbers */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const pageNum = i + 1;
+                const isSelected = currentPage === pageNum;
+                return (
+                  <Button
+                    key={pageNum}
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "h-9 w-9 transition-all duration-200",
+                      isSelected 
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90 border-primary shadow-sm" 
+                        : "bg-transparent hover:bg-primary/10 hover:text-primary border-border/50"
+                    )}
+                    onClick={() => setCurrentPage(pageNum)}
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+
+              {totalPages > 5 && <span className="px-2 text-muted-foreground">...</span>}
+              
+              {totalPages > 5 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "h-9 w-9 transition-all duration-200",
+                    currentPage === totalPages 
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90 border-primary shadow-sm" 
+                      : "bg-transparent hover:bg-primary/10 hover:text-primary border-border/50"
+                  )}
+                  onClick={() => setCurrentPage(totalPages)}
+                >
+                  {totalPages}
+                </Button>
+              )}
+
               <Button
                 variant="outline"
                 size="icon"
-                className="h-8 w-8 bg-transparent"
+                className="h-9 w-9 bg-transparent hover:bg-primary/10 hover:text-primary border-border/50 transition-colors"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages || totalPages === 0}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
