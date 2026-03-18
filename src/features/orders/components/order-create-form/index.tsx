@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -30,43 +31,49 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useProducts } from "../../../products/hooks/queries/use-products";
+import { createOrderAction } from "../../actions/create-order";
 
 interface OrderItem {
   id: number;
+  product_id: string;
+  shop_id: string;
   name: string;
   variant: string;
   price: number;
   quantity: number;
 }
 
-const productSuggestions = [
-  { name: "아크릴 키링 세트", price: 16000, variants: ["A세트", "B세트", "C세트"] },
-  { name: "포토카드 풀세트", price: 45000, variants: ["ver.A", "ver.B"] },
-  { name: "미니 포스터 3종", price: 18000, variants: ["봄", "여름", "가을"] },
-  { name: "스티커 팩 (5종)", price: 12500, variants: ["기본", "홀로그램"] },
-  { name: "아크릴 스탠드", price: 28000, variants: ["소형", "중형", "대형"] },
-  { name: "마스킹 테이프", price: 8500, variants: ["15mm", "30mm"] },
-  { name: "엽서 세트 (10장)", price: 15000, variants: ["기본", "특별판"] },
-];
-
 export function OrderCreateForm() {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  const { data: productsData = [] } = useProducts();
+  const productSuggestions = productsData.map((p: any) => ({
+    product_id: p.id,
+    shop_id: p.shop_id,
+    name: p.name,
+    price: p.price,
+    variants: ["기본"], // 현재 DB에 variant가 없으므로 기본값 사용
+  }));
+
   const [currentStep, setCurrentStep] = useState(0);
-  const [orderItems, setOrderItems] = useState<OrderItem[]>([
-    { id: 1, name: "아크릴 키링 세트", variant: "A세트", price: 16000, quantity: 2 },
-  ]);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
+  const [receiverName, setReceiverName] = useState("");
+  const [receiverPhone, setReceiverPhone] = useState("");
   const [zipcode, setZipcode] = useState("");
   const [address, setAddress] = useState("");
   const [addressDetail, setAddressDetail] = useState("");
   const [deliveryMemo, setDeliveryMemo] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
-  const [paymentStatus, setPaymentStatus] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState("paid");
   const [orderMemo, setOrderMemo] = useState("");
-  const [nextItemId, setNextItemId] = useState(2);
+  const [nextItemId, setNextItemId] = useState(1);
 
   const steps = [
     { label: "주문 상품", icon: <Package className="h-4 w-4" /> },
@@ -75,17 +82,19 @@ export function OrderCreateForm() {
     { label: "결제 / 메모", icon: <CreditCard className="h-4 w-4" /> },
   ];
 
-  const filteredProducts = productSuggestions.filter((p) =>
+  const filteredProducts = productSuggestions.filter((p: any) =>
     p.name.includes(searchQuery)
   );
 
-  const addItem = (product: (typeof productSuggestions)[0]) => {
+  const addItem = (product: any) => {
     setOrderItems([
       ...orderItems,
       {
         id: nextItemId,
+        product_id: product.product_id,
+        shop_id: product.shop_id,
         name: product.name,
-        variant: product.variants[0],
+        variant: "기본",
         price: product.price,
         quantity: 1,
       },
@@ -93,6 +102,59 @@ export function OrderCreateForm() {
     setNextItemId(nextItemId + 1);
     setSearchQuery("");
     setShowSuggestions(false);
+  };
+
+  const handleSubmit = async () => {
+    if (orderItems.length === 0) {
+      alert("상품을 1개 이상 선택해주세요.");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const payload = {
+          shop_id: orderItems[0].shop_id, // 첫 번째 상품의 상점 ID를 기준으로 함 (주문 당 1개 샵 가정)
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          customer_email: customerEmail || null,
+          receiver_name: receiverName,
+          receiver_phone: receiverPhone,
+          zipcode: zipcode,
+          address: address,
+          address_detail: addressDetail || null,
+          delivery_memo: deliveryMemo || null,
+          shipping_cost: shippingCost,
+          subtotal_amount: subtotal,
+          total_amount: total,
+          payment_method: paymentMethod || null,
+          payment_status: paymentStatus,
+          order_memo: orderMemo || null,
+          items: orderItems.map((item) => ({
+            product_id: item.product_id,
+            product_name: item.name,
+            variant: item.variant,
+            price: item.price,
+            quantity: item.quantity,
+          })),
+        };
+
+        const result = await createOrderAction(null, payload);
+
+        if (!result.success && result.errors) {
+          const firstError = Object.values(result.errors)[0][0] as string;
+          alert(`등록 실패: ${firstError}`);
+          return;
+        }
+
+        if (result.success) {
+          alert("주문이 성공적으로 등록되었습니다.");
+          router.push("/orders");
+        }
+      } catch (error) {
+        console.error("Order creation error:", error);
+        alert("알 수 없는 오류가 발생했습니다.");
+      }
+    });
   };
 
   const removeItem = (id: number) => {
@@ -456,6 +518,12 @@ export function OrderCreateForm() {
                 type="checkbox"
                 id="sameAsCustomer"
                 className="h-4 w-4 rounded border-border text-primary accent-[oklch(0.55_0.18_250)]"
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setReceiverName(customerName);
+                    setReceiverPhone(customerPhone);
+                  }
+                }}
               />
               <Label
                 htmlFor="sameAsCustomer"
@@ -467,16 +535,28 @@ export function OrderCreateForm() {
 
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label className="text-sm font-medium">
+                <Label htmlFor="receiverName" className="text-sm font-medium">
                   수령인 <span className="text-destructive">*</span>
                 </Label>
-                <Input placeholder="수령인 이름" className="h-11" />
+                <Input
+                  id="receiverName"
+                  placeholder="수령인 이름"
+                  value={receiverName}
+                  onChange={(e) => setReceiverName(e.target.value)}
+                  className="h-11"
+                />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-medium">
+                <Label htmlFor="receiverPhone" className="text-sm font-medium">
                   연락처 <span className="text-destructive">*</span>
                 </Label>
-                <Input placeholder="010-0000-0000" className="h-11" />
+                <Input
+                  id="receiverPhone"
+                  placeholder="010-0000-0000"
+                  value={receiverPhone}
+                  onChange={(e) => setReceiverPhone(e.target.value)}
+                  className="h-11"
+                />
               </div>
             </div>
 
@@ -751,9 +831,25 @@ export function OrderCreateForm() {
             다음 단계
           </Button>
         ) : (
-          <Button className="gap-2 px-8">
-            <Save className="h-4 w-4" />
-            주문 등록
+          <Button
+            className="gap-2 px-8"
+            onClick={handleSubmit}
+            disabled={isPending}
+          >
+            {isPending ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                등록 중...
+              </span>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                주문 등록
+              </>
+            )}
           </Button>
         )}
       </div>

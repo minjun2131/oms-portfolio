@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -35,14 +35,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { useOrders } from "../../hooks/queries/use-orders";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   paid: {
     label: "결제완료",
     className: "bg-[oklch(0.65_0.18_145)]/10 text-[oklch(0.5_0.18_145)]",
   },
+  pending: {
+    label: "입금대기",
+    className: "bg-[oklch(0.75_0.15_85)]/15 text-[oklch(0.55_0.15_85)]",
+  },
   preparing: {
-    label: "준비중",
+    label: "상품준비중",
     className: "bg-[oklch(0.75_0.15_85)]/15 text-[oklch(0.55_0.15_85)]",
   },
   shipping: {
@@ -59,16 +64,25 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   },
 };
 
-const orders = [
-  { id: "ORD-2024-0128", customer: "이지은", phone: "010-1234-5678", products: "아크릴 키링 세트 외 1건", amount: 48000, status: "shipping", date: "2024.01.28 14:23", method: "카카오페이" },
-  { id: "ORD-2024-0127", customer: "박민수", phone: "010-9876-5432", products: "포토카드 풀세트", amount: 45000, status: "paid", date: "2024.01.28 13:15", method: "신용카드" },
-  { id: "ORD-2024-0126", customer: "김하늘", phone: "010-5555-1234", products: "미니 포스터 3종", amount: 18000, status: "delivered", date: "2024.01.27 18:40", method: "계좌이체" },
-  { id: "ORD-2024-0125", customer: "정수현", phone: "010-3333-7890", products: "스티커 팩 (5종) 외 2건", amount: 43500, status: "preparing", date: "2024.01.27 11:05", method: "네이버페이" },
-  { id: "ORD-2024-0124", customer: "최영호", phone: "010-7777-4321", products: "아크릴 스탠드", amount: 28000, status: "shipping", date: "2024.01.27 09:30", method: "카카오페이" },
-  { id: "ORD-2024-0123", customer: "한소희", phone: "010-2222-8765", products: "엽서 세트 (10장)", amount: 15000, status: "delivered", date: "2024.01.26 16:20", method: "신용카드" },
-  { id: "ORD-2024-0122", customer: "오민재", phone: "010-4444-3210", products: "마스킹 테이프 외 1건", amount: 22000, status: "cancelled", date: "2024.01.26 10:45", method: "휴대폰" },
-  { id: "ORD-2024-0121", customer: "서예린", phone: "010-6666-5555", products: "포토카드 풀세트 외 3건", amount: 92000, status: "paid", date: "2024.01.25 20:10", method: "신용카드" },
-];
+const getProductSummary = (items: any[]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+  if (!items || items.length === 0) return "상품 없음";
+  const firstItem = items[0];
+  if (items.length === 1) return firstItem.product_name;
+  return `${firstItem.product_name} 외 ${items.length - 1}건`;
+};
+
+const getMethodLabel = (method: string | null) => {
+  if (!method) return "-";
+  const labels: Record<string, string> = {
+    card: "신용카드",
+    transfer: "계좌이체",
+    phone: "휴대폰",
+    cash: "현금",
+    kakaopay: "카카오페이",
+    naverpay: "네이버페이",
+  };
+  return labels[method] || method;
+};
 
 const summaryCards = [
   {
@@ -104,6 +118,11 @@ const summaryCards = [
 export function OrderList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  const { data: orders = [], isLoading } = useOrders({
+    search: searchQuery,
+    status: statusFilter,
+  });
 
   return (
     <div className="space-y-6">
@@ -239,101 +258,111 @@ export function OrderList() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {orders.map((order) => {
-                const status = statusConfig[order.status];
-                return (
-                  <tr
-                    key={order.id}
-                    className="transition-colors hover:bg-muted/20"
-                  >
-                    <td className="px-4 py-4 w-12">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-border accent-[oklch(0.55_0.18_250)]"
-                      />
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className="text-sm font-medium text-primary">
-                        {order.id}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">
-                          {order.customer}
+              {isLoading ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    데이터를 불러오는 중입니다...
+                  </td>
+                </tr>
+              ) : orders.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    조건에 일치하는 주문이 없습니다.
+                  </td>
+                </tr>
+              ) : (
+                orders.map((order: any) => {
+                  const status = statusConfig[order.status] || {
+                    label: order.status,
+                    className: "bg-muted text-muted-foreground",
+                  };
+                  return (
+                    <tr
+                      key={order.id}
+                      className="transition-colors hover:bg-muted/20"
+                    >
+                      <td className="px-4 py-4 w-12">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-border accent-[oklch(0.55_0.18_250)]"
+                        />
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="text-sm font-medium text-primary">
+                          {order.id.split("-")[0].toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {order.customer_name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {order.customer_phone}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="hidden px-4 py-4 md:table-cell">
+                        <p className="text-sm text-foreground max-w-[200px] truncate">
+                          {getProductSummary(order.order_items)}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          {order.phone}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="hidden px-4 py-4 md:table-cell">
-                      <p className="text-sm text-foreground max-w-[200px] truncate">
-                        {order.products}
-                      </p>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className="text-sm font-semibold text-foreground">
-                        {order.amount.toLocaleString()}원
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <Badge
-                        variant="secondary"
-                        className={cn(
-                          "border-0 font-medium",
-                          status.className
-                        )}
-                      >
-                        {status.label}
-                      </Badge>
-                    </td>
-                    <td className="hidden px-4 py-4 lg:table-cell whitespace-nowrap">
-                      <span className="text-sm text-muted-foreground">
-                        {order.method}
-                      </span>
-                    </td>
-                    <td className="hidden px-4 py-4 sm:table-cell whitespace-nowrap">
-                      <span className="text-sm text-muted-foreground">
-                        {order.date}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-right whitespace-nowrap">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <Link href={`/orders/${order.id}`}>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className="text-sm font-semibold text-foreground">
+                          {order.total_amount?.toLocaleString() || 0}원
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <Badge
+                          variant="secondary"
+                          className={cn("border-0 font-medium", status.className)}
+                        >
+                          {status.label}
+                        </Badge>
+                      </td>
+                      <td className="hidden px-4 py-4 lg:table-cell whitespace-nowrap">
+                        <span className="text-sm text-muted-foreground">
+                          {getMethodLabel(order.payment_method)}
+                        </span>
+                      </td>
+                      <td className="hidden px-4 py-4 sm:table-cell whitespace-nowrap">
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(order.created_at).toLocaleDateString()}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-right whitespace-nowrap">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <Link href={`/orders/${order.id}`}>
+                              <DropdownMenuItem className="gap-2 cursor-pointer">
+                                <Eye className="h-4 w-4" />
+                                상세보기
+                              </DropdownMenuItem>
+                            </Link>
                             <DropdownMenuItem className="gap-2 cursor-pointer">
-                              <Eye className="h-4 w-4" />
-                              상세보기
+                              <Truck className="h-4 w-4" />
+                              배송 상태 변경
                             </DropdownMenuItem>
-                          </Link>
-                          <DropdownMenuItem className="gap-2 cursor-pointer">
-                            <Truck className="h-4 w-4" />
-                            배송 상태 변경
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2 cursor-pointer">
-                            <Package className="h-4 w-4" />
-                            송장 입력
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="gap-2 text-destructive cursor-pointer">
-                            주문 취소
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                );
-              })}
+                            <DropdownMenuItem className="gap-2 cursor-pointer">
+                              <Package className="h-4 w-4" />
+                              송장 입력
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="gap-2 text-destructive cursor-pointer">
+                              주문 취소
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

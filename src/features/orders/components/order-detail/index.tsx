@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Package,
@@ -39,49 +39,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-
-const orderData = {
-  id: "ORD-2024-0128",
-  status: "shipping",
-  date: "2024.01.28 14:23",
-  customer: {
-    name: "이지은",
-    phone: "010-1234-5678",
-    email: "jieun@example.com",
-  },
-  shipping: {
-    address: "서울특별시 강남구 테헤란로 123",
-    addressDetail: "스타타워 4층 401호",
-    zipCode: "06142",
-    memo: "부재 시 경비실에 맡겨주세요",
-    carrier: "CJ대한통운",
-    trackingNumber: "123456789012",
-  },
-  payment: {
-    method: "카카오페이",
-    subtotal: 43000,
-    shipping: 3000,
-    discount: -2000,
-    total: 44000,
-    paidAt: "2024.01.28 14:25",
-  },
-  items: [
-    { name: "아크릴 키링 세트 (4종)", qty: 2, price: 15000, image: "KR" },
-    { name: "미니 포스터 A3", qty: 1, price: 13000, image: "PS" },
-  ],
-  timeline: [
-    { label: "주문 접수", date: "01.28 14:23", done: true },
-    { label: "결제 완료", date: "01.28 14:25", done: true },
-    { label: "상품 준비", date: "01.28 16:00", done: true },
-    { label: "발송 완료", date: "01.29 09:30", done: true },
-    { label: "배송 중", date: "01.29 14:10", done: true },
-    { label: "배송 완료", date: "", done: false },
-  ],
-  memos: [
-    { author: "김셀러", date: "01.28 16:05", text: "상품 포장 완료. 키링 세트 버블랩 추가 포장함." },
-    { author: "김셀러", date: "01.29 09:32", text: "CJ대한통운 발송 완료. 송장번호 입력 완료." },
-  ],
-};
+import { useOrder } from "../../hooks/queries/use-order";
+import { updateOrderStatusAction } from "../../actions/update-order-status";
+import { deleteOrderAction } from "../../actions/delete-order";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   paid: { label: "결제완료", className: "bg-[oklch(0.65_0.18_145)]/10 text-[oklch(0.5_0.18_145)]" },
@@ -93,17 +53,92 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 
 export function OrderDetail() {
   const params = useParams();
-  const [newMemo, setNewMemo] = useState("");
-  const [memos, setMemos] = useState(orderData.memos);
-  const status = statusConfig[orderData.status];
+  const router = useRouter();
+  const orderId = params.id as string;
+  const { data: order, isLoading, error: queryError } = useOrder(orderId);
 
-  const handleAddMemo = () => {
-    if (!newMemo.trim()) return;
-    setMemos([
-      ...memos,
-      { author: "김셀러", date: "지금", text: newMemo },
-    ]);
-    setNewMemo("");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [carrier, setCarrier] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState("");
+  const [memo, setMemo] = useState("");
+
+  if (isLoading) return <div className="flex h-96 items-center justify-center">Loading...</div>;
+  if (queryError || !order) return <div className="p-8 text-center text-destructive">주문을 불러오는 중 오류가 발생했습니다.</div>;
+
+  const currentStatus = statusConfig[order.status] || statusConfig.preparing;
+
+  const handleUpdateStatus = async (newStatus: string) => {
+    setIsUpdating(true);
+    try {
+      const result = await updateOrderStatusAction(orderId, { status: newStatus });
+      if (result.success) {
+        alert("상태가 업데이트되었습니다.");
+      } else {
+        alert(result.message);
+      }
+    } catch (err) {
+      alert("업데이트 중 오류가 발생했습니다.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleUpdateShipping = async () => {
+    setIsUpdating(true);
+    try {
+      const result = await updateOrderStatusAction(orderId, {
+        carrier: carrier || order.carrier,
+        tracking_number: trackingNumber || order.tracking_number,
+      });
+      if (result.success) {
+        alert("배송 정보가 업데이트되었습니다.");
+      } else {
+        alert(result.message);
+      }
+    } catch (err) {
+      alert("업데이트 중 오류가 발생했습니다.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleUpdateMemo = async () => {
+    if (!memo.trim()) return;
+    setIsUpdating(true);
+    try {
+      const result = await updateOrderStatusAction(orderId, { order_memo: memo });
+      if (result.success) {
+        alert("메모가 업데이트되었습니다.");
+        setMemo("");
+      } else {
+        alert(result.message);
+      }
+    } catch (err) {
+      alert("업데이트 중 오류가 발생했습니다.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!window.confirm("정말로 이 주문을 삭제하시겠습니까? 삭제된 정보는 복구할 수 없습니다.")) {
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      const result = await deleteOrderAction(orderId);
+      if (result.success) {
+        alert("주문이 삭제되었습니다.");
+        router.push("/orders");
+      } else {
+        alert(result.message);
+      }
+    } catch (err) {
+      alert("삭제 중 오류가 발생했습니다.");
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (
@@ -121,13 +156,13 @@ export function OrderDetail() {
           <div className="flex items-center gap-4">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-foreground">{orderData.id}</h1>
-                <Badge variant="secondary" className={cn("border-0 font-medium", status.className)}>
-                  {status.label}
+                <h1 className="text-2xl font-bold text-foreground">{order.id.split("-")[0].toUpperCase()}</h1>
+                <Badge variant="secondary" className={cn("border-0 font-medium", currentStatus.className)}>
+                  {currentStatus.label}
                 </Badge>
               </div>
               <p className="mt-1 text-muted-foreground">
-                {orderData.date} 주문
+                {new Date(order.created_at).toLocaleString()} 주문
               </p>
             </div>
           </div>
@@ -144,10 +179,20 @@ export function OrderDetail() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem>주문 수정</DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive">주문 취소</DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive font-semibold"
+                  onClick={handleDeleteOrder}
+                  disabled={isUpdating}
+                >
+                  주문 삭제
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Select defaultValue="shipping">
+            <Select
+              defaultValue={order.status}
+              onValueChange={handleUpdateStatus}
+              disabled={isUpdating}
+            >
               <SelectTrigger className="h-9 w-36">
                 <SelectValue />
               </SelectTrigger>
@@ -176,17 +221,17 @@ export function OrderDetail() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {orderData.items.map((item, i) => (
+                {order.order_items.map((item, i) => (
                   <div key={i} className="flex items-center gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-sm font-semibold text-muted-foreground">
-                      {item.image}
+                    <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-xs font-semibold text-muted-foreground overflow-hidden text-center p-1">
+                      {item.product_name.substring(0, 4)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">수량: {item.qty}개</p>
+                      <p className="text-sm font-medium text-foreground">{item.product_name}</p>
+                      <p className="text-xs text-muted-foreground">옵션: {item.variant || "기본"} / 수량: {item.quantity}개</p>
                     </div>
                     <p className="text-sm font-semibold text-foreground">
-                      {(item.price * item.qty).toLocaleString()}원
+                      {(item.price * item.quantity).toLocaleString()}원
                     </p>
                   </div>
                 ))}
@@ -195,21 +240,17 @@ export function OrderDetail() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">상품 합계</span>
-                  <span className="text-foreground">{orderData.payment.subtotal.toLocaleString()}원</span>
+                  <span className="text-foreground">{order.subtotal_amount.toLocaleString()}원</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">배송비</span>
-                  <span className="text-foreground">+{orderData.payment.shipping.toLocaleString()}원</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">할인</span>
-                  <span className="text-primary">{orderData.payment.discount.toLocaleString()}원</span>
+                  <span className="text-foreground">+{order.shipping_cost.toLocaleString()}원</span>
                 </div>
                 <Separator className="my-2" />
                 <div className="flex justify-between">
                   <span className="text-sm font-semibold text-foreground">총 결제금액</span>
                   <span className="text-lg font-bold text-primary">
-                    {orderData.payment.total.toLocaleString()}원
+                    {order.total_amount.toLocaleString()}원
                   </span>
                 </div>
               </div>
@@ -230,32 +271,53 @@ export function OrderDetail() {
                   <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium text-foreground">
-                      ({orderData.shipping.zipCode}) {orderData.shipping.address}
+                      ({order.zipcode}) {order.address}
                     </p>
-                    <p className="text-sm text-muted-foreground">{orderData.shipping.addressDetail}</p>
+                    <p className="text-sm text-muted-foreground">{order.address_detail}</p>
                   </div>
                 </div>
-                {orderData.shipping.memo && (
+                {order.delivery_memo && (
                   <div className="flex items-start gap-3">
                     <MessageSquare className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">{orderData.shipping.memo}</p>
+                    <p className="text-sm text-muted-foreground">{order.delivery_memo}</p>
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex-1 grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">택배사</p>
-                    <p className="text-sm font-medium text-foreground">{orderData.shipping.carrier}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">송장번호</p>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-primary">{orderData.shipping.trackingNumber}</p>
-                      <button className="text-muted-foreground hover:text-foreground">
-                        <Copy className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">택배사</p>
+                  <Select
+                    defaultValue={order.carrier || ""}
+                    onValueChange={setCarrier}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="택배사 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CJ대한통운">CJ대한통운</SelectItem>
+                      <SelectItem value="한진택배">한진택배</SelectItem>
+                      <SelectItem value="롯데택배">롯데택배</SelectItem>
+                      <SelectItem value="우체국택배">우체국택배</SelectItem>
+                      <SelectItem value="로젠택배">로젠택배</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">송장번호</p>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="송장번호 입력"
+                      defaultValue={order.tracking_number || ""}
+                      onChange={(e) => setTrackingNumber(e.target.value)}
+                      className="h-10"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleUpdateShipping}
+                      disabled={isUpdating}
+                    >
+                      저장
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -272,26 +334,28 @@ export function OrderDetail() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3 mb-4">
-                {memos.map((memo, i) => (
-                  <div key={i} className="rounded-xl bg-muted/40 p-3">
+                {order.order_memo ? (
+                  <div className="rounded-xl bg-muted/40 p-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-semibold text-foreground">{memo.author}</span>
-                      <span className="text-xs text-muted-foreground">{memo.date}</span>
+                      <span className="text-xs font-semibold text-foreground">관리자</span>
+                      <span className="text-xs text-muted-foreground">{new Date(order.updated_at).toLocaleString()}</span>
                     </div>
-                    <p className="text-sm text-foreground">{memo.text}</p>
+                    <p className="text-sm text-foreground">{order.order_memo}</p>
                   </div>
-                ))}
+                ) : (
+                  <p className="text-sm text-muted-foreground py-4 text-center">등록된 메모가 없습니다.</p>
+                )}
               </div>
-              <div className="flex gap-2">
+              <div className="space-y-2">
                 <Textarea
                   placeholder="메모를 남겨보세요..."
-                  value={newMemo}
-                  onChange={(e) => setNewMemo(e.target.value)}
+                  value={memo}
+                  onChange={(e) => setMemo(e.target.value)}
                   className="min-h-[80px] resize-none"
                 />
-              </div>
-              <div className="mt-2 flex justify-end">
-                <Button size="sm" onClick={handleAddMemo}>메모 추가</Button>
+                <div className="flex justify-end">
+                  <Button size="sm" onClick={handleUpdateMemo} disabled={isUpdating}>메모 저장</Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -311,11 +375,11 @@ export function OrderDetail() {
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
                   <span className="text-sm font-semibold text-primary">
-                    {orderData.customer.name.charAt(0)}
+                    {order.customer_name.charAt(0)}
                   </span>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">{orderData.customer.name}</p>
+                  <p className="text-sm font-semibold text-foreground">{order.customer_name}</p>
                   <p className="text-xs text-muted-foreground">일반 고객</p>
                 </div>
               </div>
@@ -323,18 +387,18 @@ export function OrderDetail() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground">{orderData.customer.phone}</span>
+                  <span className="text-sm text-foreground">{order.customer_phone}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground">{orderData.customer.email}</span>
+                  <span className="text-sm text-foreground">{order.customer_email || "이메일 없음"}</span>
                 </div>
               </div>
               <Separator />
               <div className="text-center">
                 <p className="text-xs text-muted-foreground mb-1">이 고객의 총 주문</p>
-                <p className="text-lg font-bold text-foreground">7건</p>
-                <p className="text-xs text-muted-foreground">총 320,000원</p>
+                <p className="text-lg font-bold text-foreground">1건</p>
+                <p className="text-xs text-muted-foreground">총 {order.total_amount.toLocaleString()}원</p>
               </div>
             </CardContent>
           </Card>
@@ -350,17 +414,17 @@ export function OrderDetail() {
             <CardContent className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">결제 수단</span>
-                <span className="text-sm font-medium text-foreground">{orderData.payment.method}</span>
+                <span className="text-sm font-medium text-foreground">{order.payment_method || "정보 없음"}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">결제 일시</span>
-                <span className="text-sm text-foreground">{orderData.payment.paidAt}</span>
+                <span className="text-sm text-muted-foreground">결제 상태</span>
+                <span className="text-sm text-foreground uppercase">{order.payment_status}</span>
               </div>
               <Separator />
               <div className="flex justify-between">
                 <span className="text-sm font-semibold text-foreground">결제 금액</span>
                 <span className="text-sm font-bold text-primary">
-                  {orderData.payment.total.toLocaleString()}원
+                  {order.total_amount.toLocaleString()}원
                 </span>
               </div>
             </CardContent>
@@ -376,7 +440,13 @@ export function OrderDetail() {
             </CardHeader>
             <CardContent>
               <div className="space-y-0">
-                {orderData.timeline.map((step, i) => (
+                {[
+                  { label: "주문 접수", done: true, date: new Date(order.created_at).toLocaleString() },
+                  { label: "발송 준비", done: ["preparing", "shipping", "delivered"].includes(order.status) },
+                  { label: "발송 완료", done: ["shipping", "delivered"].includes(order.status) },
+                  { label: "배송 중", done: ["shipping", "delivered"].includes(order.status) },
+                  { label: "배송 완료", done: order.status === "delivered" },
+                ].map((step, i, arr) => (
                   <div key={i} className="flex gap-3">
                     <div className="flex flex-col items-center">
                       <div
@@ -393,7 +463,7 @@ export function OrderDetail() {
                           <div className="h-2 w-2 rounded-full bg-current" />
                         )}
                       </div>
-                      {i < orderData.timeline.length - 1 && (
+                      {i < arr.length - 1 && (
                         <div
                           className={cn(
                             "w-px flex-1 my-1",
