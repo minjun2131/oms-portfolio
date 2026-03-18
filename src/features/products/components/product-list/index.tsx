@@ -39,11 +39,12 @@ import { cn } from "@/lib/utils";
 import type { Product } from "@/features/products/types";
 import type { GetProductsResult } from "@/features/products/services/get-products";
 
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { useProducts } from "@/features/products/hooks/queries/use-products";
 import { deleteProductAction } from "@/features/products/actions/delete-product";
 import { useQueryClient } from "@tanstack/react-query";
 import { productsQueryKeys } from "@/features/products/constants/query-keys";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 
 const getStatusBadge = (status: Product["status"]) => {
   switch (status) {
@@ -70,10 +71,18 @@ const getStatusBadge = (status: Product["status"]) => {
 };
 
 export function ProductList() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState<Product["status"] | "all">("all");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // URL에서 상태 가져오기
+  const currentPage = Number(searchParams.get("page")) || 1;
+  const searchQuery = searchParams.get("q") || "";
+  const categoryFilter = searchParams.get("category") || "all";
+  const statusFilter = (searchParams.get("status") as Product["status"] | "all") || "all";
+
+  // 검색 입력을 위한 로컬 상태 (디바운스용)
+  const [inputValue, setInputValue] = useState(searchQuery);
 
   const { data: result, isLoading } = useProducts({ 
     search: searchQuery, 
@@ -91,10 +100,49 @@ export function ProductList() {
   const [isPending, startTransition] = useTransition();
   const queryClient = useQueryClient();
 
-  // 검색어나 필터가 변경되면 페이지를 1페이지로 리셋
+  // URL 업데이트 헬퍼 함수
+  const createQueryString = useCallback(
+    (params: Record<string, string | number | null>) => {
+      const newParams = new URLSearchParams(searchParams.toString());
+      
+      Object.entries(params).forEach(([key, value]) => {
+        if (value === null || value === "all" || value === "") {
+          newParams.delete(key);
+        } else {
+          newParams.set(key, String(value));
+        }
+      });
+
+      return newParams.toString();
+    },
+    [searchParams]
+  );
+
+  const updateFilters = (newFilters: Record<string, string | number | null>) => {
+    // 필터 변경 시 페이지는 1로 리셋 (단, 페이지 자체를 넘기는 경우는 제외)
+    const params = { ...newFilters };
+    if (!params.page && currentPage !== 1) {
+      params.page = 1;
+    }
+    
+    router.push(`${pathname}?${createQueryString(params)}`);
+  };
+
+  // 검색어 디바운스 처리
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, categoryFilter, statusFilter]);
+    const timer = setTimeout(() => {
+      if (inputValue !== searchQuery) {
+        updateFilters({ q: inputValue, page: 1 });
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [inputValue, searchQuery]);
+
+  // 외부(URL)에서 검색어가 바뀌면 입력창 동기화
+  useEffect(() => {
+    setInputValue(searchQuery);
+  }, [searchQuery]);
 
   const handleDelete = (productId: string, productName: string) => {
     if (!confirm(`"${productName}" 상품을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) {
@@ -154,13 +202,13 @@ export function ProductList() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="상품명으로 검색"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
                 className="pl-10"
               />
             </div>
             <div className="flex gap-3">
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <Select value={categoryFilter} onValueChange={(v) => updateFilters({ category: v })}>
                 <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="카테고리" />
                 </SelectTrigger>
@@ -173,7 +221,7 @@ export function ProductList() {
                   <SelectItem value="acrylic">아크릴</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+              <Select value={statusFilter} onValueChange={(v) => updateFilters({ status: v })}>
                 <SelectTrigger className="w-[120px]">
                   <SelectValue placeholder="상태" />
                 </SelectTrigger>
@@ -185,9 +233,8 @@ export function ProductList() {
                 </SelectContent>
               </Select>
               <Button variant="outline" size="icon" onClick={() => {
-                setSearchQuery("");
-                setCategoryFilter("all");
-                setStatusFilter("all");
+                setInputValue("");
+                updateFilters({ q: "", category: "all", status: "all", page: 1 });
               }}>
                 <Filter className="h-4 w-4" />
               </Button>
@@ -365,7 +412,7 @@ export function ProductList() {
                 variant="outline"
                 size="icon"
                 className="h-9 w-9 bg-transparent hover:bg-primary/10 hover:text-primary border-border/50 transition-colors"
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                onClick={() => updateFilters({ page: Math.max(1, currentPage - 1) })}
                 disabled={currentPage === 1}
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -386,7 +433,7 @@ export function ProductList() {
                         ? "bg-primary text-primary-foreground hover:bg-primary/90 border-primary shadow-sm" 
                         : "bg-transparent hover:bg-primary/10 hover:text-primary border-border/50"
                     )}
-                    onClick={() => setCurrentPage(pageNum)}
+                    onClick={() => updateFilters({ page: pageNum })}
                   >
                     {pageNum}
                   </Button>
@@ -405,7 +452,7 @@ export function ProductList() {
                       ? "bg-primary text-primary-foreground hover:bg-primary/90 border-primary shadow-sm" 
                       : "bg-transparent hover:bg-primary/10 hover:text-primary border-border/50"
                   )}
-                  onClick={() => setCurrentPage(totalPages)}
+                  onClick={() => updateFilters({ page: totalPages })}
                 >
                   {totalPages}
                 </Button>
@@ -415,7 +462,7 @@ export function ProductList() {
                 variant="outline"
                 size="icon"
                 className="h-9 w-9 bg-transparent hover:bg-primary/10 hover:text-primary border-border/50 transition-colors"
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                onClick={() => updateFilters({ page: Math.min(totalPages, currentPage + 1) })}
                 disabled={currentPage === totalPages || totalPages === 0}
               >
                 <ChevronRight className="h-4 w-4" />
