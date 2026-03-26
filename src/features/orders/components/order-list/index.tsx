@@ -36,33 +36,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useOrders } from "../../hooks/queries/use-orders";
-
-const statusConfig: Record<string, { label: string; className: string }> = {
-  paid: {
-    label: "결제완료",
-    className: "bg-[oklch(0.65_0.18_145)]/10 text-[oklch(0.5_0.18_145)]",
-  },
-  pending: {
-    label: "입금대기",
-    className: "bg-[oklch(0.75_0.15_85)]/15 text-[oklch(0.55_0.15_85)]",
-  },
-  preparing: {
-    label: "상품준비중",
-    className: "bg-[oklch(0.75_0.15_85)]/15 text-[oklch(0.55_0.15_85)]",
-  },
-  shipping: {
-    label: "배송중",
-    className: "bg-[oklch(0.55_0.18_250)]/10 text-[oklch(0.55_0.18_250)]",
-  },
-  delivered: {
-    label: "배송완료",
-    className: "bg-muted text-muted-foreground",
-  },
-  cancelled: {
-    label: "취소",
-    className: "bg-destructive/10 text-destructive",
-  },
-};
+import { ORDER_STATUS_CONFIG, getOrderSummaryCards, OrderStatus } from "../../constants/order-status";
 
 const getProductSummary = (items: any[]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
   if (!items || items.length === 0) return "상품 없음";
@@ -84,37 +58,6 @@ const getMethodLabel = (method: string | null) => {
   return labels[method] || method;
 };
 
-const summaryCards = [
-  {
-    label: "전체 주문",
-    value: "1,284",
-    icon: <ShoppingCart className="h-5 w-5" />,
-    color: "text-primary",
-    bgColor: "bg-primary/10",
-  },
-  {
-    label: "결제 대기",
-    value: "23",
-    icon: <Clock className="h-5 w-5" />,
-    color: "text-[oklch(0.75_0.15_85)]",
-    bgColor: "bg-[oklch(0.75_0.15_85)]/15",
-  },
-  {
-    label: "배송중",
-    value: "45",
-    icon: <Truck className="h-5 w-5" />,
-    color: "text-[oklch(0.55_0.18_250)]",
-    bgColor: "bg-[oklch(0.55_0.18_250)]/10",
-  },
-  {
-    label: "배송 완료",
-    value: "1,216",
-    icon: <CheckCircle2 className="h-5 w-5" />,
-    color: "text-[oklch(0.5_0.18_145)]",
-    bgColor: "bg-[oklch(0.65_0.18_145)]/10",
-  },
-];
-
 export function OrderList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -123,6 +66,19 @@ export function OrderList() {
     search: searchQuery,
     status: statusFilter,
   });
+
+  // ✅ useOrders는 현재 statusFilter가 적용된 결과를 반환하므로
+  // 전체 통계는 필터 없이 별도로 조회
+  const { data: allOrders = [] } = useOrders();
+
+  const summaryCards = useMemo(() => {
+    const total = allOrders.length;
+    const pending = allOrders.filter((o: any) => o.status === "pending" || o.status === "paid").length;
+    const shipping = allOrders.filter((o: any) => o.status === "shipping" || o.status === "shipped" || o.status === "preparing").length;
+    const delivered = allOrders.filter((o: any) => o.status === "delivered").length;
+
+    return getOrderSummaryCards({ total, pending, shipping, delivered });
+  }, [allOrders]);
 
   return (
     <div className="space-y-6">
@@ -272,7 +228,7 @@ export function OrderList() {
                 </tr>
               ) : (
                 orders.map((order: any) => {
-                  const status = statusConfig[order.status] || {
+                  const status = ORDER_STATUS_CONFIG[order.status as OrderStatus] || {
                     label: order.status,
                     className: "bg-muted text-muted-foreground",
                   };
@@ -314,7 +270,7 @@ export function OrderList() {
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
                         <Badge
-                          variant="secondary"
+                          variant="outline"
                           className={cn("border-0 font-medium", status.className)}
                         >
                           {status.label}
@@ -370,7 +326,7 @@ export function OrderList() {
         {/* Pagination */}
         <div className="flex items-center justify-between border-t border-border px-4 py-4">
           <p className="text-sm text-muted-foreground">
-            총 1,284건 중 1~8건 표시
+            총 {orders.length}건 표시
           </p>
           <div className="flex items-center gap-1">
             <Button

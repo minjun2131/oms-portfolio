@@ -2,6 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { ORDER_STATUS_CONFIG, OrderStatus } from "@/features/orders/constants/order-status";
+import { cn } from "@/lib/utils";
 
 const orders = [
   {
@@ -9,8 +11,7 @@ const orders = [
     customer: "이지은",
     product: "아크릴 키링 세트",
     amount: "₩32,000",
-    status: "배송중",
-    statusColor: "bg-[oklch(0.55_0.18_250)]/10 text-[oklch(0.55_0.18_250)]",
+    status: "shipping" as OrderStatus,
     date: "2분 전",
   },
   {
@@ -18,8 +19,7 @@ const orders = [
     customer: "박민수",
     product: "포토카드 풀세트",
     amount: "₩45,000",
-    status: "결제완료",
-    statusColor: "bg-[oklch(0.65_0.18_145)]/10 text-[oklch(0.65_0.18_145)]",
+    status: "paid" as OrderStatus,
     date: "15분 전",
   },
   {
@@ -27,8 +27,7 @@ const orders = [
     customer: "김하늘",
     product: "미니 포스터 3종",
     amount: "₩18,000",
-    status: "배송완료",
-    statusColor: "bg-muted text-muted-foreground",
+    status: "delivered" as OrderStatus,
     date: "1시간 전",
   },
   {
@@ -36,8 +35,7 @@ const orders = [
     customer: "정수현",
     product: "스티커 팩 (5종)",
     amount: "₩12,500",
-    status: "준비중",
-    statusColor: "bg-[oklch(0.75_0.15_85)]/15 text-[oklch(0.55_0.15_85)]",
+    status: "preparing" as OrderStatus,
     date: "2시간 전",
   },
   {
@@ -45,8 +43,7 @@ const orders = [
     customer: "최영호",
     product: "아크릴 스탠드",
     amount: "₩28,000",
-    status: "배송중",
-    statusColor: "bg-[oklch(0.55_0.18_250)]/10 text-[oklch(0.55_0.18_250)]",
+    status: "shipping" as OrderStatus,
     date: "3시간 전",
   },
 ];
@@ -91,10 +88,13 @@ export function RecentOrders() {
                   <p className="text-xs text-muted-foreground">{order.date}</p>
                 </div>
                 <Badge
-                  variant="secondary"
-                  className={`${order.statusColor} border-0 font-medium`}
+                  variant="outline"
+                  className={cn(
+                    "border-0 font-medium",
+                    ORDER_STATUS_CONFIG[order.status].className
+                  )}
                 >
-                  {order.status}
+                  {ORDER_STATUS_CONFIG[order.status].label}
                 </Badge>
               </div>
             </div>

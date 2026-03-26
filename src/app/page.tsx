@@ -11,6 +11,7 @@ import {
   SalesChart,
   QuickActions,
 } from "@/features/dashboard/components";
+import { DashboardWidget } from "@/components/shared/dashboard-widget";
 
 export default function HomePage() {
   return (
@@ -58,7 +59,9 @@ export default function HomePage() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left Column - Sales Chart */}
         <div className="lg:col-span-2">
-          <SalesChart />
+          <DashboardWidget>
+            <SalesChart />
+          </DashboardWidget>
         </div>
 
         {/* Right Column - Quick Actions */}
@@ -69,8 +72,12 @@ export default function HomePage() {
 
       {/* Bottom Grid */}
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <RecentOrders />
-        <TopProducts />
+        <DashboardWidget>
+          <RecentOrders />
+        </DashboardWidget>
+        <DashboardWidget>
+          <TopProducts />
+        </DashboardWidget>
       </div>
     </div>
   );
