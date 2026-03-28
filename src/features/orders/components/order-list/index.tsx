@@ -324,10 +324,7 @@ export function OrderList() {
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between border-t border-border px-4 py-4">
-          <p className="text-sm text-muted-foreground">
-            총 {orders.length}건 표시
-          </p>
+        <div className="flex items-center justify-center border-t border-border px-4 py-4">
           <div className="flex items-center gap-1">
             <Button
               variant="outline"
