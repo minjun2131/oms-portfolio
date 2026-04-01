@@ -37,6 +37,7 @@ export interface Database {
           is_deleted?: boolean
           deleted_at?: string | null
         }
+        Relationships: []
       }
       subscriptions: {
         Row: {
@@ -75,6 +76,7 @@ export interface Database {
           next_billing_at?: string | null
           cancelled_at?: string | null
         }
+        Relationships: []
       }
       payments: {
         Row: {
@@ -107,9 +109,153 @@ export interface Database {
           order_id?: string | null
           amount?: number | null
           status?: string
-          item?: string | null
           paid_at?: string
         }
+        Relationships: []
+      }
+      shops: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          user_id: string
+          name: string
+          status: string
+          platform: string
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          user_id: string
+          name: string
+          status?: string
+          platform: string
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+          name?: string
+          status?: string
+          platform?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          user_id: string
+          shop_id: string | null
+          name: string
+          sku: string | null
+          price: number
+          stock_quantity: number
+          status: string
+          image_url: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          user_id: string
+          shop_id?: string | null
+          name: string
+          sku?: string | null
+          price: number
+          stock_quantity?: number
+          status?: string
+          image_url?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+          shop_id?: string | null
+          name?: string
+          sku?: string | null
+          price?: number
+          stock_quantity?: number
+          status?: string
+          image_url?: string | null
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          user_id: string
+          shop_id: string | null
+          order_number: string
+          status: string
+          total_amount: number
+          customer_name: string | null
+          customer_phone: string | null
+          shipping_address: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          user_id: string
+          shop_id?: string | null
+          order_number: string
+          status?: string
+          total_amount: number
+          customer_name?: string | null
+          customer_phone?: string | null
+          shipping_address?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+          shop_id?: string | null
+          order_number?: string
+          status?: string
+          total_amount?: number
+          customer_name?: string | null
+          customer_phone?: string | null
+          shipping_address?: string | null
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          id: string
+          created_at: string
+          order_id: string
+          product_id: string
+          quantity: number
+          unit_price: number
+          total_price: number
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          order_id: string
+          product_id: string
+          quantity: number
+          unit_price: number
+          total_price: number
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          order_id?: string
+          product_id?: string
+          quantity?: number
+          unit_price?: number
+          total_price?: number
+        }
+        Relationships: []
       }
     }
     Views: {

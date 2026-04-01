@@ -11,7 +11,7 @@ export const updateShopQueryBuilder = (
 ) => {
   return supabaseClient
     .from("shops")
-    .update(data as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    .update(data as Database["public"]["Tables"]["shops"]["Update"])
     .eq("id", id)
     .select()
     .single();

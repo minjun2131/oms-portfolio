@@ -1,6 +1,7 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/admin';
+import { Database } from '@/types/database.types';
 
 interface ChargeBillingArgs {
   subscriptionId: string;
@@ -15,7 +16,7 @@ export async function chargeBillingAction({ subscriptionId }: ChargeBillingArgs)
       .from('subscriptions')
       .select('*')
       .eq('id', subscriptionId)
-      .single();
+      .single() as { data: Database['public']['Tables']['subscriptions']['Row'] | null, error: any };
 
     if (subError || !subscription) {
       throw new Error('구독 정보를 찾을 수 없습니다.');
@@ -64,7 +65,7 @@ export async function chargeBillingAction({ subscriptionId }: ChargeBillingArgs)
         amount: amount,
         status: 'FAILED',
         item: '월간 프리미엄 구독',
-      });
+      } as Database['public']['Tables']['payments']['Insert']);
       console.error('Charge Billing Error:', paymentData);
       throw new Error(`결제 실패: ${paymentData.message}`);
     }
@@ -79,16 +80,16 @@ export async function chargeBillingAction({ subscriptionId }: ChargeBillingArgs)
       subscription_id: subscription.id,
       payment_key: paymentData.paymentKey,
       order_id: orderId,
-      amount: amount,
+      amount: amount as number | null,
       status: 'DONE',
       item: '월간 프리미엄 구독',
       paid_at: new Date().toISOString(),
-    });
+    } as Database['public']['Tables']['payments']['Insert']);
 
     // 구독 다음 결제일 업데이트
     await supabase
       .from('subscriptions')
-      .update({ next_billing_at: nextBillingDate.toISOString() })
+      .update({ next_billing_at: nextBillingDate.toISOString() } as Database['public']['Tables']['subscriptions']['Update'])
       .eq('id', subscription.id);
 
     return {
