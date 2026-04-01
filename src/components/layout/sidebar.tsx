@@ -81,7 +81,14 @@ const bottomNavItems: NavItem[] = [
   },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  profile?: {
+    email: string;
+    avatar_url: string | null;
+  } | null;
+}
+
+export function Sidebar({ profile }: SidebarProps) {
   const [activeItem, setActiveItem] = useState("/");
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -90,7 +97,11 @@ export function Sidebar() {
     setExpandedItem(expandedItem === label ? null : label);
   };
 
-  const SidebarContent = () => (
+  const SidebarContent = () => {
+    const defaultName = profile?.email ? profile.email.split('@')[0] : "Admin";
+    const initial = defaultName.charAt(0).toUpperCase();
+
+    return (
     <>
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-sidebar-border">
@@ -200,20 +211,29 @@ export function Sidebar() {
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
             <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-              김
+              {initial}
             </AvatarFallback>
+            {profile?.avatar_url && (
+              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover rounded-full" />
+            )}
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-sidebar-foreground truncate">
-              김셀러
+              {defaultName}
             </p>
             <p className="text-xs text-sidebar-foreground/60 truncate">
-              seller@example.com
+              {profile?.email || "admin@example.com"}
             </p>
           </div>
           <Button
             variant="ghost"
             size="icon"
+            onClick={async () => {
+              const { createClient } = await import('@/lib/supabase/client');
+              const supabase = createClient();
+              await supabase.auth.signOut();
+              window.location.href = '/login';
+            }}
             className="h-8 w-8 text-sidebar-foreground/60 hover:text-sidebar-foreground"
           >
             <LogOut className="h-4 w-4" />
@@ -221,7 +241,8 @@ export function Sidebar() {
         </div>
       </div>
     </>
-  );
+    );
+  };
 
   return (
     <>
