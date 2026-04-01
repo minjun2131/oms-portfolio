@@ -38,6 +38,79 @@ export interface Database {
           deleted_at?: string | null
         }
       }
+      subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          billing_key: string | null
+          customer_key: string | null
+          status: string
+          plan: string
+          amount: number
+          started_at: string
+          next_billing_at: string | null
+          cancelled_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          billing_key?: string | null
+          customer_key?: string | null
+          status?: string
+          plan?: string
+          amount?: number
+          started_at?: string
+          next_billing_at?: string | null
+          cancelled_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          billing_key?: string | null
+          customer_key?: string | null
+          status?: string
+          plan?: string
+          amount?: number
+          started_at?: string
+          next_billing_at?: string | null
+          cancelled_at?: string | null
+        }
+      }
+      payments: {
+        Row: {
+          id: string
+          user_id: string
+          subscription_id: string | null
+          payment_key: string | null
+          order_id: string | null
+          amount: number | null
+          status: string
+          item: string | null
+          paid_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          subscription_id?: string | null
+          payment_key?: string | null
+          order_id?: string | null
+          amount?: number | null
+          status?: string
+          item?: string | null
+          paid_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          subscription_id?: string | null
+          payment_key?: string | null
+          order_id?: string | null
+          amount?: number | null
+          status?: string
+          item?: string | null
+          paid_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
