@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -105,12 +106,18 @@ export function Sidebar({ profile }: SidebarProps) {
     <>
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-sidebar-border">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-          <span className="text-sm font-bold text-primary-foreground">SF</span>
-        </div>
-        <span className="text-lg font-semibold text-sidebar-foreground">
-          셀러플로우
-        </span>
+        <h1 className="flex items-center gap-2">
+          <Image
+            src="/logo.png"
+            alt="셀러플로우"
+            width={36}
+            height={36}
+            className="rounded-lg"
+          />
+          <span className="text-lg font-semibold text-sidebar-foreground">
+            셀러플로우
+          </span>
+        </h1>
       </div>
 
       {/* Main Navigation */}
@@ -248,10 +255,14 @@ export function Sidebar({ profile }: SidebarProps) {
     <>
       {/* Mobile Menu Button */}
       <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-sidebar border-b border-sidebar-border px-4 py-3 lg:hidden">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <span className="text-xs font-bold text-primary-foreground">SF</span>
-          </div>
+        <div className="flex items-center gap-2">
+          <Image
+            src="/logo.png"
+            alt="셀러플로우"
+            width={32}
+            height={32}
+            className="rounded-lg"
+          />
           <span className="text-base font-semibold text-sidebar-foreground">
             셀러플로우
           </span>

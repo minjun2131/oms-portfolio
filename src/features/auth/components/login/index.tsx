@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,26 +35,18 @@ export function LoginForm() {
   return (
     <div className="w-full max-w-md space-y-8">
       {/* Mobile Logo */}
-      <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            className="w-6 h-6 text-primary-foreground"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 2L2 7l10 5 10-5-10-5z" />
-            <path d="M2 17l10 5 10-5" />
-            <path d="M2 12l10 5 10-5" />
-          </svg>
-        </div>
+      <h1 className="lg:hidden flex items-center justify-center gap-3 mb-8">
+        <Image
+          src="/logo.png"
+          alt="셀러플로우"
+          width={40}
+          height={40}
+          className="rounded-xl"
+        />
         <span className="text-2xl font-bold tracking-tight text-foreground">
           셀러플로우
         </span>
-      </div>
+      </h1>
 
       {/* Header */}
       <div className="space-y-2 text-center lg:text-left">

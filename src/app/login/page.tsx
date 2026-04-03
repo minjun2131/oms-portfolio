@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { LoginForm } from "@/features/auth/components";
 
 export const metadata: Metadata = {
@@ -21,24 +22,16 @@ function LoginBranding() {
       {/* Content */}
       <div className="relative z-10 flex flex-col justify-between p-12 text-primary-foreground">
         <div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                className="w-6 h-6 text-primary-foreground"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-                <path d="M2 12l10 5 10-5" />
-              </svg>
-            </div>
+          <h1 className="flex items-center gap-3">
+            <Image
+              src="/logo.png"
+              alt="셀러플로우"
+              width={44}
+              height={44}
+              className="rounded-xl"
+            />
             <span className="text-2xl font-bold tracking-tight">셀러플로우</span>
-          </div>
+          </h1>
         </div>
 
         <div className="space-y-8">
