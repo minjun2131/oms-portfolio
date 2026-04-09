@@ -236,6 +236,7 @@ export interface Database {
           quantity: number
           unit_price: number
           total_price: number
+          product_name: string | null
         }
         Insert: {
           id?: string
@@ -245,6 +246,7 @@ export interface Database {
           quantity: number
           unit_price: number
           total_price: number
+          product_name?: string | null
         }
         Update: {
           id?: string
@@ -254,6 +256,7 @@ export interface Database {
           quantity?: number
           unit_price?: number
           total_price?: number
+          product_name?: string | null
         }
         Relationships: []
       }

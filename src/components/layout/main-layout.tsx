@@ -24,12 +24,18 @@ export async function MainLayout({ children }: MainLayoutProps) {
     redirect(ROUTES.LOGIN);
   }
 
-  const profile = user ? await getUserById(supabase, user.id) : null;
+  const dbProfile = user ? await getUserById(supabase, user.id) : null;
+  
+  // 데이터베이스 트리거 실행 지연으로 profile이 바로 조회되지 않을 경우 auth user 정보로 대체
+  const displayProfile = dbProfile || (user ? {
+    email: user.email || "",
+    avatar_url: user.user_metadata?.avatar_url || null,
+  } : null);
 
   return (
     <LayoutContent 
       header={<Header />} 
-      sidebar={<Sidebar profile={profile} />}
+      sidebar={<Sidebar profile={displayProfile} />}
     >
       {children}
     </LayoutContent>

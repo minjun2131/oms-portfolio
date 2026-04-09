@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -11,10 +11,9 @@ import {
   Eye,
   Truck,
   ArrowUpDown,
-  ShoppingCart,
-  Clock,
   Package,
-  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +35,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useOrders } from "../../hooks/queries/use-orders";
-import { ORDER_STATUS_CONFIG, getOrderSummaryCards, OrderStatus } from "../../constants/order-status";
+import {
+  ORDER_STATUS_CONFIG,
+  getOrderSummaryCards,
+  OrderStatus,
+} from "../../constants/order-status";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
+import { ORDERS_PAGE_SIZE } from "../../services/get-orders";
 
 const getProductSummary = (items: any[]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
   if (!items || items.length === 0) return "상품 없음";
@@ -59,23 +64,93 @@ const getMethodLabel = (method: string | null) => {
 };
 
 export function OrderList() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const { data: orders = [], isLoading } = useOrders({
+  // URL에서 상태 읽기
+  const currentPage = Number(searchParams.get("page")) || 1;
+  const searchQuery = searchParams.get("q") || "";
+  const statusFilter = searchParams.get("status") || "all";
+
+  // 검색 입력을 위한 로컬 상태 (디바운스용)
+  const [inputValue, setInputValue] = useState(searchQuery);
+
+  // URL 업데이트 헬퍼 함수
+  const createQueryString = useCallback(
+    (params: Record<string, string | number | null>) => {
+      const newParams = new URLSearchParams(searchParams.toString());
+
+      Object.entries(params).forEach(([key, value]) => {
+        if (value === null || value === "all" || value === "") {
+          newParams.delete(key);
+        } else {
+          newParams.set(key, String(value));
+        }
+      });
+
+      return newParams.toString();
+    },
+    [searchParams]
+  );
+
+  const updateFilters = useCallback(
+    (newFilters: Record<string, string | number | null>) => {
+      const params = { ...newFilters };
+      // 필터 변경 시 페이지는 1로 리셋 (단, 페이지 자체를 넘기는 경우는 제외)
+      if (!("page" in params) && currentPage !== 1) {
+        params.page = 1;
+      }
+      router.push(`${pathname}?${createQueryString(params)}`);
+    },
+    [router, pathname, createQueryString, currentPage]
+  );
+
+  // 검색어 디바운스 처리 (500ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (inputValue !== searchQuery) {
+        updateFilters({ q: inputValue, page: 1 });
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [inputValue, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 외부(URL)에서 검색어가 바뀌면 입력창 동기화
+  useEffect(() => {
+    setInputValue(searchQuery);
+  }, [searchQuery]);
+
+  // 필터링된 주문 목록 (페이지네이션 포함)
+  const { data: result, isLoading } = useOrders({
     search: searchQuery,
     status: statusFilter,
+    page: currentPage,
   });
 
-  // ✅ useOrders는 현재 statusFilter가 적용된 결과를 반환하므로
-  // 전체 통계는 필터 없이 별도로 조회
-  const { data: allOrders = [] } = useOrders();
+  const orders = result?.data ?? [];
+  const totalCount = result?.count ?? 0;
+  const totalPages = Math.ceil(totalCount / ORDERS_PAGE_SIZE);
+
+  // 전체 통계용 (필터 없이)
+  const { data: allResult } = useOrders();
+  const allOrders = allResult?.data ?? [];
 
   const summaryCards = useMemo(() => {
     const total = allOrders.length;
-    const pending = allOrders.filter((o: any) => o.status === "pending" || o.status === "paid").length;
-    const shipping = allOrders.filter((o: any) => o.status === "shipping" || o.status === "shipped" || o.status === "preparing").length;
-    const delivered = allOrders.filter((o: any) => o.status === "delivered").length;
+    const pending = allOrders.filter(
+      (o: any) => o.status === "pending" || o.status === "paid" // eslint-disable-line @typescript-eslint/no-explicit-any
+    ).length;
+    const shipping = allOrders.filter(
+      (o: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
+        o.status === "shipping" ||
+        o.status === "shipped" ||
+        o.status === "preparing"
+    ).length;
+    const delivered = allOrders.filter(
+      (o: any) => o.status === "delivered" // eslint-disable-line @typescript-eslint/no-explicit-any
+    ).length;
 
     return getOrderSummaryCards({ total, pending, shipping, delivered });
   }, [allOrders]);
@@ -133,19 +208,21 @@ export function OrderList() {
       <Card className="border-border/50 shadow-sm">
         <CardContent className="p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            {/* 검색 인풋 (디바운스 + URL 연동) */}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="주문번호, 고객명, 상품명으로 검색..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
                 className="h-10 pl-10"
               />
             </div>
             <div className="flex gap-2">
+              {/* 상태 필터 (URL 연동) */}
               <Select
                 value={statusFilter}
-                onValueChange={setStatusFilter}
+                onValueChange={(v) => updateFilters({ status: v })}
               >
                 <SelectTrigger className="h-10 w-32">
                   <SelectValue placeholder="상태" />
@@ -159,10 +236,15 @@ export function OrderList() {
                   <SelectItem value="cancelled">취소</SelectItem>
                 </SelectContent>
               </Select>
+              {/* 필터 초기화 */}
               <Button
                 variant="outline"
                 size="icon"
                 className="h-10 w-10 bg-transparent"
+                onClick={() => {
+                  setInputValue("");
+                  updateFilters({ q: "", status: "all", page: 1 });
+                }}
               >
                 <Filter className="h-4 w-4" />
               </Button>
@@ -173,6 +255,14 @@ export function OrderList() {
 
       {/* Orders Table */}
       <Card className="border-border/50 shadow-sm overflow-hidden">
+        {/* 총 건수 헤더 */}
+        <div className="border-b border-border/50 px-4 py-3 flex items-center">
+          <p className="text-sm font-medium text-muted-foreground">
+            총{" "}
+            <span className="text-foreground font-semibold">{totalCount}</span>건
+          </p>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -216,19 +306,27 @@ export function OrderList() {
             <tbody className="divide-y divide-border">
               {isLoading ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  <td
+                    colSpan={9}
+                    className="px-4 py-8 text-center text-sm text-muted-foreground"
+                  >
                     데이터를 불러오는 중입니다...
                   </td>
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  <td
+                    colSpan={9}
+                    className="px-4 py-8 text-center text-sm text-muted-foreground"
+                  >
                     조건에 일치하는 주문이 없습니다.
                   </td>
                 </tr>
               ) : (
-                orders.map((order: any) => {
-                  const status = ORDER_STATUS_CONFIG[order.status as OrderStatus] || {
+                orders.map((order: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+                  const status = ORDER_STATUS_CONFIG[
+                    order.status as OrderStatus
+                  ] || {
                     label: order.status,
                     className: "bg-muted text-muted-foreground",
                   };
@@ -323,40 +421,73 @@ export function OrderList() {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-center border-t border-border px-4 py-4">
-          <div className="flex items-center gap-1">
+        {/* Pagination (동적) */}
+        <div className="flex items-center justify-center border-t border-border/50 px-4 py-6">
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              size="sm"
-              disabled
-              className="bg-transparent"
+              size="icon"
+              className="h-9 w-9 bg-transparent hover:bg-primary/10 hover:text-primary border-border/50 transition-colors"
+              onClick={() =>
+                updateFilters({ page: Math.max(1, currentPage - 1) })
+              }
+              disabled={currentPage === 1}
             >
-              이전
+              <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button size="sm" className="h-8 w-8 p-0">
-              1
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-muted-foreground"
-            >
-              2
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-muted-foreground"
-            >
-              3
-            </Button>
+
+            {/* 페이지 번호 버튼 (최대 5개 표시) */}
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const pageNum = i + 1;
+              const isSelected = currentPage === pageNum;
+              return (
+                <Button
+                  key={pageNum}
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "h-9 w-9 transition-all duration-200",
+                    isSelected
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90 border-primary shadow-sm"
+                      : "bg-transparent hover:bg-primary/10 hover:text-primary border-border/50"
+                  )}
+                  onClick={() => updateFilters({ page: pageNum })}
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+
+            {totalPages > 5 && (
+              <span className="px-2 text-muted-foreground">...</span>
+            )}
+
+            {totalPages > 5 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "h-9 w-9 transition-all duration-200",
+                  currentPage === totalPages
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90 border-primary shadow-sm"
+                    : "bg-transparent hover:bg-primary/10 hover:text-primary border-border/50"
+                )}
+                onClick={() => updateFilters({ page: totalPages })}
+              >
+                {totalPages}
+              </Button>
+            )}
+
             <Button
               variant="outline"
-              size="sm"
-              className="bg-transparent"
+              size="icon"
+              className="h-9 w-9 bg-transparent hover:bg-primary/10 hover:text-primary border-border/50 transition-colors"
+              onClick={() =>
+                updateFilters({ page: Math.min(totalPages, currentPage + 1) })
+              }
+              disabled={currentPage === totalPages || totalPages === 0}
             >
-              다음
+              <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
