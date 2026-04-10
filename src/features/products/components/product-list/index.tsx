@@ -44,7 +44,7 @@ import { useProducts } from "@/features/products/hooks/queries/use-products";
 import { deleteProductAction } from "@/features/products/actions/delete-product";
 import { useQueryClient } from "@tanstack/react-query";
 import { productsQueryKeys } from "@/features/products/constants/query-keys";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useMemo } from "react";
 
 const getStatusBadge = (status: Product["status"]) => {
   switch (status) {
@@ -84,13 +84,16 @@ export function ProductList() {
   // 검색 입력을 위한 로컬 상태 (디바운스용)
   const [inputValue, setInputValue] = useState(searchQuery);
 
-  const { data: result, isLoading } = useProducts({ 
+  // 필터 파라미터 메모이제이션 (참조 주소 고정으로 무한 요청 방지)
+  const queryParams = useMemo(() => ({
     search: searchQuery, 
     category: categoryFilter, 
     status: statusFilter,
     page: currentPage,
     limit: 10 
-  });
+  }), [searchQuery, categoryFilter, statusFilter, currentPage]);
+
+  const { data: result, isLoading } = useProducts(queryParams);
 
   const products = result?.data ?? [];
   const totalCount = result?.count ?? 0;
@@ -325,13 +328,20 @@ export function ProductList() {
                     </td>
                     <td className="px-4 py-4 min-w-[200px]">
                       <div className="flex items-center gap-3">
-                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-muted">
-                          <Image
-                            src={product.imageUrl || "/placeholder.svg"}
-                            alt={product.name}
-                            fill
-                            className="object-cover"
-                          />
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                          {product.imageUrl ? (
+                            <img
+                              src={product.imageUrl}
+                              alt={product.name}
+                              className="h-full w-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = "https://via.placeholder.com/150D?text=No+Image";
+                              }}
+                            />
+                          ) : (
+                            <span>No Image</span>
+                          )}
                         </div>
                         <span className="font-medium text-foreground line-clamp-2">
                           {product.name}

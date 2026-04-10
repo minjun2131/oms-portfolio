@@ -122,12 +122,14 @@ export function OrderList() {
     setInputValue(searchQuery);
   }, [searchQuery]);
 
-  // 필터링된 주문 목록 (페이지네이션 포함)
-  const { data: result, isLoading, error } = useOrders({
+  // 필터 파라미터 메모이제이션 (참조 주소 고정으로 무한 요청 방지)
+  const queryParams = useMemo(() => ({
     search: searchQuery,
     status: statusFilter,
     page: currentPage,
-  });
+  }), [searchQuery, statusFilter, currentPage]);
+
+  const { data: result, isLoading, error } = useOrders(queryParams);
 
   const orders = result?.data ?? [];
   const totalCount = result?.count ?? 0;

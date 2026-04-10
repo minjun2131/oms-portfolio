@@ -23,6 +23,8 @@ import { usePathname } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PreparingModal } from "@/components/shared/preparing-modal";
+
 
 interface NavItem {
   label: string;
@@ -30,58 +32,8 @@ interface NavItem {
   href: string;
   badge?: number;
   children?: { label: string; href: string }[];
+  onClick?: (e: React.MouseEvent) => void;
 }
-
-const navItems: NavItem[] = [
-  {
-    label: "대시보드",
-    icon: <LayoutDashboard className="h-5 w-5" />,
-    href: "/",
-  },
-  {
-    label: "상품 관리",
-    icon: <Package className="h-5 w-5" />,
-    href: "/products",
-    children: [
-      { label: "전체 상품", href: "/products" },
-      { label: "상품 등록", href: "/products/new" },
-      { label: "재고 관리", href: "/products/inventory" },
-    ],
-  },
-  {
-    label: "주문 관리",
-    icon: <ShoppingCart className="h-5 w-5" />,
-    href: "/orders",
-    badge: 12,
-    children: [
-      { label: "주문 목록", href: "/orders" },
-      { label: "주문 등록", href: "/orders/new" },
-    ],
-  },
-  {
-    label: "상점 관리",
-    icon: <Store className="h-5 w-5" />,
-    href: "/stores",
-  },
-  {
-    label: "매출 리포트",
-    icon: <BarChart3 className="h-5 w-5" />,
-    href: "/reports",
-  },
-];
-
-const bottomNavItems: NavItem[] = [
-  {
-    label: "설정",
-    icon: <Settings className="h-5 w-5" />,
-    href: "/settings",
-  },
-  {
-    label: "도움말",
-    icon: <HelpCircle className="h-5 w-5" />,
-    href: "/help",
-  },
-];
 
 interface SidebarProps {
   profile?: {
@@ -92,6 +44,64 @@ interface SidebarProps {
 
 export function Sidebar({ profile }: SidebarProps) {
   const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isPreparingOpen, setIsPreparingOpen] = useState(false);
+
+  const navItems: NavItem[] = React.useMemo(() => [
+    {
+      label: "대시보드",
+      icon: <LayoutDashboard className="h-5 w-5" />,
+      href: "/",
+    },
+    {
+      label: "상품 관리",
+      icon: <Package className="h-5 w-5" />,
+      href: "/products",
+      children: [
+        { label: "전체 상품", href: "/products" },
+        { label: "상품 등록", href: "/products/new" },
+        { label: "재고 관리", href: "/products/inventory" },
+      ],
+    },
+    {
+      label: "주문 관리",
+      icon: <ShoppingCart className="h-5 w-5" />,
+      href: "/orders",
+      badge: 12,
+      children: [
+        { label: "주문 목록", href: "/orders" },
+        { label: "주문 등록", href: "/orders/new" },
+      ],
+    },
+    {
+      label: "점포 관리",
+      icon: <Store className="h-5 w-5" />,
+      href: "#",
+      onClick: (e) => {
+        e.preventDefault();
+        setIsPreparingOpen(true);
+      }
+    },
+    {
+      label: "매출 리포트",
+      icon: <BarChart3 className="h-5 w-5" />,
+      href: "/reports",
+    },
+  ], []);
+
+  const bottomNavItems: NavItem[] = React.useMemo(() => [
+    {
+      label: "설정",
+      icon: <Settings className="h-5 w-5" />,
+      href: "/settings",
+    },
+    {
+      label: "도움말",
+      icon: <HelpCircle className="h-5 w-5" />,
+      href: "/help",
+    },
+  ], []);
+
   const [expandedItem, setExpandedItem] = useState<string | null>(() => {
     // 현재 경로에 맞는 카테고리를 미리 펼쳐둠
     const activeParent = navItems.find(item => 
@@ -99,7 +109,7 @@ export function Sidebar({ profile }: SidebarProps) {
     );
     return activeParent ? activeParent.label : null;
   });
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
 
   const toggleExpand = (label: string) => {
     setExpandedItem(expandedItem === label ? null : label);
@@ -111,7 +121,7 @@ export function Sidebar({ profile }: SidebarProps) {
     return pathname.startsWith(href);
   };
 
-  const SidebarContent = () => {
+  const renderSidebarContent = () => {
     const defaultName = profile?.email ? profile.email.split('@')[0] : "Admin";
     const initial = defaultName.charAt(0).toUpperCase();
 
@@ -181,6 +191,7 @@ export function Sidebar({ profile }: SidebarProps) {
               ) : (
                 <Link
                   href={item.href}
+                  onClick={item.onClick}
                   className={cn(
                     "flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                     isPathActive(item.href)
@@ -313,14 +324,15 @@ export function Sidebar({ profile }: SidebarProps) {
         )}
       >
         <div className="flex h-full flex-col">
-          <SidebarContent />
+          {renderSidebarContent()}
         </div>
       </aside>
 
-      {/* Desktop Sidebar */}
       <aside className="fixed left-0 top-0 z-30 hidden h-screen w-64 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
-        <SidebarContent />
+        {renderSidebarContent()}
       </aside>
+
+      <PreparingModal isOpen={isPreparingOpen} onOpenChange={setIsPreparingOpen} />
     </>
   );
 }

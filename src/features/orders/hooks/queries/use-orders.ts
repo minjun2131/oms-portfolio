@@ -11,8 +11,8 @@ export function useOrders(params?: GetOrdersParams) {
   const supabase = createClient();
 
   return useQuery({
-    queryKey: ordersQueryKeys.list(params ?? {}),
+    queryKey: ordersQueryKeys.list((params ?? {}) as Record<string, unknown>),
     queryFn: () => getOrders(supabase, params),
-    staleTime: 5 * 60 * 1000, // 5분
+    staleTime: 5 * 60 * 1000,
   });
 }
