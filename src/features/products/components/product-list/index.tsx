@@ -39,6 +39,13 @@ import { cn } from "@/lib/utils";
 import type { Product } from "@/features/products/types";
 import type { GetProductsResult } from "@/features/products/services/get-products";
 
+const STATUS_MAP: Record<string, string> = {
+  all: "전체 상태",
+  active: "판매중",
+  sold_out: "품절",
+  hidden: "숨김",
+};
+
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { useProducts } from "@/features/products/hooks/queries/use-products";
 import { deleteProductAction } from "@/features/products/actions/delete-product";
@@ -78,7 +85,6 @@ export function ProductList() {
   // URL에서 상태 가져오기
   const currentPage = Number(searchParams.get("page")) || 1;
   const searchQuery = searchParams.get("q") || "";
-  const categoryFilter = searchParams.get("category") || "all";
   const statusFilter = (searchParams.get("status") as Product["status"] | "all") || "all";
 
   // 검색 입력을 위한 로컬 상태 (디바운스용)
@@ -87,11 +93,10 @@ export function ProductList() {
   // 필터 파라미터 메모이제이션 (참조 주소 고정으로 무한 요청 방지)
   const queryParams = useMemo(() => ({
     search: searchQuery, 
-    category: categoryFilter, 
     status: statusFilter,
     page: currentPage,
     limit: 10 
-  }), [searchQuery, categoryFilter, statusFilter, currentPage]);
+  }), [searchQuery, statusFilter, currentPage]);
 
   const { data: result, isLoading } = useProducts(queryParams);
 
@@ -211,22 +216,11 @@ export function ProductList() {
               />
             </div>
             <div className="flex gap-3">
-              <Select value={categoryFilter} onValueChange={(v) => updateFilters({ category: v })}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="카테고리" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">전체 카테고리</SelectItem>
-                  <SelectItem value="keyring">키링</SelectItem>
-                  <SelectItem value="stationery">문구</SelectItem>
-                  <SelectItem value="sticker">스티커</SelectItem>
-                  <SelectItem value="fabric">패브릭</SelectItem>
-                  <SelectItem value="acrylic">아크릴</SelectItem>
-                </SelectContent>
-              </Select>
               <Select value={statusFilter} onValueChange={(v) => updateFilters({ status: v })}>
                 <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="상태" />
+                  <SelectValue placeholder="상태">
+                    {STATUS_MAP[statusFilter] || statusFilter}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">전체 상태</SelectItem>
@@ -237,7 +231,7 @@ export function ProductList() {
               </Select>
               <Button variant="outline" size="icon" onClick={() => {
                 setInputValue("");
-                updateFilters({ q: "", category: "all", status: "all", page: 1 });
+                updateFilters({ q: "", status: "all", page: 1 });
               }}>
                 <Filter className="h-4 w-4" />
               </Button>

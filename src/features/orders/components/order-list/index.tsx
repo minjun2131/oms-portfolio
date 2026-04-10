@@ -227,7 +227,12 @@ export function OrderList() {
                 onValueChange={(v) => updateFilters({ status: v })}
               >
                 <SelectTrigger className="h-10 w-32">
-                  <SelectValue placeholder="상태" />
+                  <SelectValue placeholder="상태">
+                    {statusFilter === "all"
+                      ? "전체 상태"
+                      : ORDER_STATUS_CONFIG[statusFilter as OrderStatus]?.label ||
+                        statusFilter}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">전체 상태</SelectItem>
