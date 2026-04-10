@@ -19,6 +19,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -90,12 +91,24 @@ interface SidebarProps {
 }
 
 export function Sidebar({ profile }: SidebarProps) {
-  const [activeItem, setActiveItem] = useState("/");
-  const [expandedItem, setExpandedItem] = useState<string | null>(null);
+  const pathname = usePathname();
+  const [expandedItem, setExpandedItem] = useState<string | null>(() => {
+    // 현재 경로에 맞는 카테고리를 미리 펼쳐둠
+    const activeParent = navItems.find(item => 
+      item.children?.some(child => pathname === child.href || pathname.startsWith(child.href + "/"))
+    );
+    return activeParent ? activeParent.label : null;
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const toggleExpand = (label: string) => {
     setExpandedItem(expandedItem === label ? null : label);
+  };
+
+  // 활성화 상태 체크 함수
+  const isPathActive = (href: string, exact = false) => {
+    if (exact || href === "/") return pathname === href;
+    return pathname.startsWith(href);
   };
 
   const SidebarContent = () => {
@@ -151,10 +164,9 @@ export function Sidebar({ profile }: SidebarProps) {
                         <li key={child.href}>
                           <Link
                             href={child.href}
-                            onClick={() => setActiveItem(child.href)}
                             className={cn(
                               "block rounded-lg px-3 py-2 text-sm transition-colors",
-                              activeItem === child.href
+                              isPathActive(child.href, true)
                                 ? "bg-sidebar-accent text-sidebar-primary font-medium"
                                 : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                             )}
@@ -169,10 +181,9 @@ export function Sidebar({ profile }: SidebarProps) {
               ) : (
                 <Link
                   href={item.href}
-                  onClick={() => setActiveItem(item.href)}
                   className={cn(
                     "flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                    activeItem === item.href
+                    isPathActive(item.href)
                       ? "bg-sidebar-accent text-sidebar-primary"
                       : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                   )}
