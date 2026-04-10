@@ -123,7 +123,7 @@ export function OrderList() {
   }, [searchQuery]);
 
   // 필터링된 주문 목록 (페이지네이션 포함)
-  const { data: result, isLoading } = useOrders({
+  const { data: result, isLoading, error } = useOrders({
     search: searchQuery,
     status: statusFilter,
     page: currentPage,
@@ -313,6 +313,15 @@ export function OrderList() {
                     데이터를 불러오는 중입니다...
                   </td>
                 </tr>
+              ) : error ? (
+                <tr>
+                  <td
+                    colSpan={9}
+                    className="px-4 py-8 text-center text-sm text-destructive"
+                  >
+                    주문 목록을 불러오지 못했습니다.
+                  </td>
+                </tr>
               ) : orders.length === 0 ? (
                 <tr>
                   <td
@@ -343,7 +352,7 @@ export function OrderList() {
                       </td>
                       <td className="px-4 py-4">
                         <span className="text-sm font-medium text-primary">
-                          {order.id.split("-")[0].toUpperCase()}
+                          {order.order_number || order.id.split("-")[0].toUpperCase()}
                         </span>
                       </td>
                       <td className="px-4 py-4">

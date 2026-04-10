@@ -14,23 +14,40 @@ export interface GetOrdersResult {
 
 /**
  * 2단계: 주문 목록 조회 서비스
- * - 주문 목록과 order_items를 함께 조회합니다.
- * - order_items는 product_id만 있으므로 product_name은 별도 조회 없이 "상품 #id"로 표시합니다.
- *   (order_items와 products 간 FK 없음 → Supabase 관계형 조인 불가)
+ * - orders를 먼저 조회한 뒤, 반환된 order ID로 order_items를 별도 조회하여 병합합니다.
+ * - PostgREST 제약(or= + embedded resource 400 에러)을 우회하기 위해 분리 조회합니다.
  */
 export const getOrders = async (
   supabaseClient: SupabaseClient<any>, // eslint-disable-line @typescript-eslint/no-explicit-any
   params?: GetOrdersParams
 ): Promise<GetOrdersResult> => {
-  const query = buildSearchOrdersQuery(supabaseClient, params);
-  const { data, error, count } = await query;
+  // 1. orders 조회 (order_items 조인 없음)
+  const query = await buildSearchOrdersQuery(supabaseClient, params);
+  const { data: orders, error, count } = await query;
 
   if (error) {
     throw new Error("주문 목록을 불러오지 못했습니다: " + error.message);
   }
 
+  if (!orders || orders.length === 0) {
+    return { data: [], count: 0 };
+  }
+
+  // 2. 반환된 order ID 목록으로 order_items 별도 조회
+  const orderIds = orders.map((o: any) => o.id); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const { data: orderItems } = await supabaseClient
+    .from("order_items")
+    .select("*")
+    .in("order_id", orderIds);
+
+  // 3. order_items를 각 order에 병합
+  const merged = orders.map((order: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+    ...order,
+    order_items: orderItems?.filter((item: any) => item.order_id === order.id) ?? [], // eslint-disable-line @typescript-eslint/no-explicit-any
+  }));
+
   return {
-    data: data ?? [],
+    data: merged,
     count: count ?? 0,
   };
 };
