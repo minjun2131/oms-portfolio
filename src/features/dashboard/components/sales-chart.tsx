@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,8 +12,19 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { cn } from "@/lib/utils";
 
-const data = [
+const weeklyData = [
+  { name: "월", 매출: 1200000 },
+  { name: "화", 매출: 1500000 },
+  { name: "수", 매출: 1100000 },
+  { name: "목", 매출: 1800000 },
+  { name: "금", 매출: 2200000 },
+  { name: "토", 매출: 2800000 },
+  { name: "일", 매출: 2400000 },
+];
+
+const monthlyData = [
   { name: "1월", 매출: 4200000 },
   { name: "2월", 매출: 3800000 },
   { name: "3월", 매출: 5100000 },
@@ -27,7 +39,17 @@ const data = [
   { name: "12월", 매출: 9100000 },
 ];
 
+const yearlyData = [
+  { name: "2021년", 매출: 45000000 },
+  { name: "2022년", 매출: 58000000 },
+  { name: "2023년", 매출: 72000000 },
+  { name: "2024년", 매출: 98000000 },
+];
+
 const formatCurrency = (value: number) => {
+  if (value >= 100000000) {
+    return `${(value / 100000000).toFixed(1)}억`;
+  }
   if (value >= 1000000) {
     return `${(value / 1000000).toFixed(0)}백만`;
   }
@@ -35,24 +57,52 @@ const formatCurrency = (value: number) => {
 };
 
 export function SalesChart() {
+  const [view, setView] = useState<"weekly" | "monthly" | "yearly">("monthly");
+
+  const chartData = {
+    weekly: weeklyData,
+    monthly: monthlyData,
+    yearly: yearlyData,
+  }[view];
+
   return (
     <Card className="border-border/50 shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-lg font-semibold text-card-foreground">
           매출 추이
         </CardTitle>
-        <div className="flex gap-1">
-          <Button variant="ghost" size="sm" className="text-muted-foreground">
+        <div className="flex gap-1 bg-muted/50 p-1 rounded-lg">
+          <Button 
+            variant={view === "weekly" ? "secondary" : "ghost"} 
+            size="sm" 
+            className={cn(
+              "text-xs px-3 h-7",
+              view === "weekly" ? "bg-background shadow-sm" : "text-muted-foreground"
+            )}
+            onClick={() => setView("weekly")}
+          >
             주간
           </Button>
           <Button
-            variant="secondary"
+            variant={view === "monthly" ? "secondary" : "ghost"}
             size="sm"
-            className="bg-primary/10 text-primary hover:bg-primary/20"
+            className={cn(
+              "text-xs px-3 h-7",
+              view === "monthly" ? "bg-background shadow-sm" : "text-muted-foreground"
+            )}
+            onClick={() => setView("monthly")}
           >
             월간
           </Button>
-          <Button variant="ghost" size="sm" className="text-muted-foreground">
+          <Button 
+            variant={view === "yearly" ? "secondary" : "ghost"} 
+            size="sm" 
+            className={cn(
+              "text-xs px-3 h-7",
+              view === "yearly" ? "bg-background shadow-sm" : "text-muted-foreground"
+            )}
+            onClick={() => setView("yearly")}
+          >
             연간
           </Button>
         </div>
@@ -61,7 +111,7 @@ export function SalesChart() {
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
-              data={data}
+              data={chartData}
               margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
             >
               <defs>
@@ -99,16 +149,17 @@ export function SalesChart() {
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "white",
+                  backgroundColor: "oklch(1 0 0 / 0.8)",
+                  backdropFilter: "blur(8px)",
                   border: "1px solid oklch(0.92 0.015 250)",
-                  borderRadius: "8px",
-                  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)",
+                  borderRadius: "12px",
+                  boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
                 }}
                 formatter={(value: any) => [
                   `₩${value.toLocaleString()}`,
                   "매출",
                 ]}
-                labelStyle={{ color: "oklch(0.2 0.02 250)", fontWeight: 600 }}
+                labelStyle={{ color: "oklch(0.2 0.02 250)", fontWeight: 600, marginBottom: "4px" }}
               />
               <Area
                 type="monotone"
@@ -117,6 +168,7 @@ export function SalesChart() {
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#colorRevenue)"
+                animationDuration={1000}
               />
             </AreaChart>
           </ResponsiveContainer>

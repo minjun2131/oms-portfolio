@@ -42,8 +42,22 @@ import { useReports } from "../hooks/queries/use-reports";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SETTLEMENTS } from "../constants";
+import { PreparingModal } from "@/components/shared/preparing-modal";
 
 const COLORS = ["oklch(0.55 0.18 250)", "oklch(0.65 0.18 145)", "oklch(0.75 0.15 85)", "oklch(0.6 0.15 30)", "oklch(0.5 0.03 250)"];
+
+const PERIOD_MAP: Record<string, string> = {
+  week: "이번 주",
+  month: "이번 달",
+  quarter: "이번 분기",
+  year: "올해",
+};
+
+const CHART_RANGE_MAP: Record<string, string> = {
+  "3months": "최근 3개월",
+  "6months": "최근 6개월",
+  "12months": "최근 12개월",
+};
 
 
 
@@ -55,6 +69,8 @@ export function ReportsView() {
   const to = searchParams.get("to") || undefined;
   
   const [period, setPeriod] = useState("month");
+  const [chartRange, setChartRange] = useState("6months");
+  const [isPreparingOpen, setIsPreparingOpen] = useState(false);
   const { data, isLoading } = useReports({ from, to });
 
   const handlePeriodChange = (value: string) => {
@@ -165,6 +181,7 @@ export function ReportsView() {
   ];
 
   return (
+    <>
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -176,7 +193,9 @@ export function ReportsView() {
           <Select value={period} onValueChange={handlePeriodChange}>
             <SelectTrigger className="h-9 w-32">
               <Calendar className="mr-2 h-4 w-4" />
-              <SelectValue />
+              <SelectValue placeholder="기간 선택">
+                {PERIOD_MAP[period] || period}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="week">이번 주</SelectItem>
@@ -185,7 +204,12 @@ export function ReportsView() {
               <SelectItem value="year">올해</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="gap-2 bg-transparent"
+            onClick={() => setIsPreparingOpen(true)}
+          >
             <Download className="h-4 w-4" />
             리포트 다운로드
           </Button>
@@ -244,9 +268,11 @@ export function ReportsView() {
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base font-semibold">월별 매출 추이</CardTitle>
-                  <Select defaultValue="6months">
+                  <Select value={chartRange} onValueChange={setChartRange}>
                     <SelectTrigger className="h-8 w-28 text-xs">
-                      <SelectValue />
+                      <SelectValue>
+                        {CHART_RANGE_MAP[chartRange] || chartRange}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="3months">최근 3개월</SelectItem>
@@ -443,5 +469,10 @@ export function ReportsView() {
         </TabsContent>
       </Tabs>
     </div>
+    <PreparingModal 
+      isOpen={isPreparingOpen} 
+      onOpenChange={setIsPreparingOpen} 
+    />
+    </>
   );
 }
