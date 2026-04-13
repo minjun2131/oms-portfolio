@@ -17,6 +17,7 @@ import {
   ChevronFirst,
   ChevronLast,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -160,10 +161,11 @@ export function ProductList() {
     startTransition(async () => {
       const result = await deleteProductAction(productId);
       if (result.success) {
+        toast.success(`"${productName}" 상품이 삭제되었습니다.`);
         queryClient.invalidateQueries({ queryKey: productsQueryKeys.all });
         setSelectedProducts((prev) => prev.filter((id) => id !== productId));
       } else {
-        alert(result.message);
+        toast.error(result.message || "상품 삭제 중 오류가 발생했습니다.");
       }
     });
   };

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff, ArrowRight, Loader2, Check, X } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -47,13 +48,11 @@ export function RegisterForm() {
           },
         },
       });
-      // 미들웨어가 인증 여부를 판단합니다.
-      // 이메일 인증 OFF → 자동 로그인되어 "/" 으로 이동
-      // 이메일 인증 ON  → 미인증 상태이므로 미들웨어가 /login 으로 리다이렉트
+      toast.success("회원가입이 완료되었습니다!");
       router.push(ROUTES.HOME);
     } catch (error: any) {
       console.error("Signup failed:", error);
-      alert(error.message || "회원가입 중 오류가 발생했습니다.");
+      toast.error(error.message || "회원가입 중 오류가 발생했습니다.");
     }
   };
 

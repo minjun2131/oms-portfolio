@@ -4,6 +4,7 @@ import { useActionState, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Upload, X, Eye, Save, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -53,9 +54,12 @@ export function ProductForm({ mode = "create", initialData }: ProductFormProps) 
   // 성공 시 상품 목록으로 이동
   useEffect(() => {
     if (state?.success) {
+      toast.success(state.message || (isEditMode ? "상품이 수정되었습니다." : "상품이 등록되었습니다."));
       router.push(ROUTES.PRODUCTS);
+    } else if (state && !state.success && state.message) {
+      toast.error(state.message);
     }
-  }, [state, router]);
+  }, [state, router, isEditMode]);
 
   const handleImageUpload = () => {
     const newImage = `/placeholder.svg?height=200&width=200&text=이미지${

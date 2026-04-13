@@ -17,6 +17,7 @@ import {
   MapPin,
   FileText,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -107,7 +108,7 @@ export function OrderCreateForm() {
 
   const handleSubmit = async () => {
     if (orderItems.length === 0) {
-      alert("상품을 1개 이상 선택해주세요.");
+      toast.warning("상품을 1개 이상 선택해주세요.");
       return;
     }
 
@@ -143,17 +144,17 @@ export function OrderCreateForm() {
 
         if (!result.success && result.errors) {
           const firstError = Object.values(result.errors)[0][0] as string;
-          alert(`등록 실패: ${firstError}`);
+          toast.error(`등록 실패: ${firstError}`);
           return;
         }
 
         if (result.success) {
-          alert("주문이 성공적으로 등록되었습니다.");
+          toast.success("주문이 성공적으로 등록되었습니다.");
           router.push("/orders");
         }
       } catch (error) {
         console.error("Order creation error:", error);
-        alert("알 수 없는 오류가 발생했습니다.");
+        toast.error("알 수 없는 오류가 발생했습니다.");
       }
     });
   };

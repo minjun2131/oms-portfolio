@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { loadTossPayments } from '@tosspayments/tosspayments-sdk';
+import { toast } from 'sonner';
 
 interface BillingAuthParams {
   customerKey: string;
@@ -40,7 +41,7 @@ export function useTossBilling() {
       });
     } catch (error) {
       console.error('Failed to request payment:', error);
-      alert('결제 초기화에 실패했습니다.');
+      toast.error('결제 초기화에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }

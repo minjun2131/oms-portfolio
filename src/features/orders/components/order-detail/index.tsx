@@ -19,6 +19,7 @@ import {
   Printer,
   MoreHorizontal,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -72,12 +73,12 @@ export function OrderDetail() {
     try {
       const result = await updateOrderStatusAction(orderId, { status: newStatus });
       if (result.success) {
-        alert("상태가 업데이트되었습니다.");
+        toast.success("상태가 업데이트되었습니다.");
       } else {
-        alert(result.message);
+        toast.error(result.message || "상태 업데이트 중 오류가 발생했습니다.");
       }
     } catch (err) {
-      alert("업데이트 중 오류가 발생했습니다.");
+      toast.error("업데이트 중 오류가 발생했습니다.");
     } finally {
       setIsUpdating(false);
     }
@@ -91,12 +92,12 @@ export function OrderDetail() {
         tracking_number: trackingNumber || order.tracking_number,
       });
       if (result.success) {
-        alert("배송 정보가 업데이트되었습니다.");
+        toast.success("배송 정보가 업데이트되었습니다.");
       } else {
-        alert(result.message);
+        toast.error(result.message || "배송 정보 수정 중 오류가 발생했습니다.");
       }
     } catch (err) {
-      alert("업데이트 중 오류가 발생했습니다.");
+      toast.error("업데이트 중 오류가 발생했습니다.");
     } finally {
       setIsUpdating(false);
     }
@@ -108,13 +109,13 @@ export function OrderDetail() {
     try {
       const result = await updateOrderStatusAction(orderId, { order_memo: memo });
       if (result.success) {
-        alert("메모가 업데이트되었습니다.");
+        toast.success("메모가 업데이트되었습니다.");
         setMemo("");
       } else {
-        alert(result.message);
+        toast.error(result.message || "메모 업데이트 중 오류가 발생했습니다.");
       }
     } catch (err) {
-      alert("업데이트 중 오류가 발생했습니다.");
+      toast.error("업데이트 중 오류가 발생했습니다.");
     } finally {
       setIsUpdating(false);
     }
@@ -129,13 +130,13 @@ export function OrderDetail() {
     try {
       const result = await deleteOrderAction(orderId);
       if (result.success) {
-        alert("주문이 삭제되었습니다.");
+        toast.success("주문이 삭제되었습니다.");
         router.push("/orders");
       } else {
-        alert(result.message);
+        toast.error(result.message || "주문 삭제 중 오류가 발생했습니다.");
       }
     } catch (err) {
-      alert("삭제 중 오류가 발생했습니다.");
+      toast.error("삭제 중 오류가 발생했습니다.");
     } finally {
       setIsUpdating(false);
     }

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -25,10 +26,11 @@ export function LoginForm() {
     e.preventDefault();
     try {
       await signIn({ email, password });
+      toast.success("로그인에 성공했습니다.");
       router.push(ROUTES.HOME);
     } catch (error: any) {
       console.error("Login failed:", error);
-      alert(error.message || "로그인 중 오류가 발생했습니다.");
+      toast.error(error.message || "로그인 중 오류가 발생했습니다.");
     }
   };
 

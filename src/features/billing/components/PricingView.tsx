@@ -1,5 +1,6 @@
 'use client';
 
+import { toast } from 'sonner';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2 } from 'lucide-react';
@@ -31,17 +32,22 @@ export function PricingView({ customerKey, customerEmail, customerName }: Pricin
 
     if (planId === 'pro') {
       if (!customerKey) {
-        alert('로그인이 필요한 서비스입니다.');
+        toast.warning('로그인이 필요한 서비스입니다.');
         router.push('/login');
         return;
       }
       
-      // 토스 페이먼츠 결제창 호출
-      await requestPayment({
-        customerKey,
-        customerEmail: customerEmail || 'customer@email.com',
-        customerName: customerName || '홍길동',
-      });
+      try {
+        // 토스 페이먼츠 결제창 호출
+        await requestPayment({
+          customerKey,
+          customerEmail: customerEmail || 'customer@email.com',
+          customerName: customerName || '홍길동',
+        });
+      } catch (error) {
+        console.error('Failed to request payment:', error);
+        toast.error('결제 초기화에 실패했습니다.');
+      }
     }
   };
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 import {
   User,
   Bell,
@@ -49,7 +50,7 @@ export function SettingsClient({ initialProfile, isSubscribed, onLogout }: Setti
     // API 호출 위치 (Supabase 갱신 로직 추가 가능)
     await new Promise((resolve) => setTimeout(resolve, 1000));
     setIsSaving(false);
-    alert('설정이 저장되었습니다.');
+    toast.success('설정이 저장되었습니다.');
   };
 
   const handleNotificationChange = (key: string) => {
