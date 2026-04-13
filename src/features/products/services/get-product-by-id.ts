@@ -1,6 +1,8 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "@/types/database.types";
 import { getProductByIdQueryBuilder } from "../query-builder/get-product-by-id.builder";
+import type { Product } from "../types";
+import { mapToProduct } from "./mapper";
 
 /**
  * 2단계: 단일 상품 조회 서비스
@@ -9,12 +11,15 @@ import { getProductByIdQueryBuilder } from "../query-builder/get-product-by-id.b
 export const getProductById = async (
   supabaseClient: SupabaseClient<Database>,
   id: string
-) => {
+): Promise<Product | null> => {
   const { data, error } = await getProductByIdQueryBuilder(supabaseClient, id);
 
   if (error) {
     throw new Error("상품 정보를 불러오는 데 실패했습니다: " + error.message);
   }
 
-  return data;
+  if (!data) return null;
+
+  return mapToProduct(data);
 };
+

@@ -73,7 +73,10 @@ export function InventoryList() {
           imageUrl: product.imageUrl,
           currentStock: product.stock,
           minStock: 15, // TODO: DB에 min_stock 컬럼 추가 시 연동
+          description: product.description,
+          comparePrice: product.comparePrice,
         }))
+
       );
     }
   }, [products]);

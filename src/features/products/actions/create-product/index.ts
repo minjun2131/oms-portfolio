@@ -21,6 +21,7 @@ export async function createProductAction(
     // 1. FormData → 객체 변환
     const rawData = {
       name: formData.get("name"),
+      description: formData.get("description"),
       price: formData.get("price"),
       stock_quantity: formData.get("stock_quantity"),
       shopName: formData.get("shopName"),
@@ -79,10 +80,11 @@ export async function createProductAction(
         }));
         await supabase.from("product_images").insert(imageInserts);
         
-        // 첫 번째 이미지를 메인 image_url로 업데이트 (이미 되어있지 않다면)
-        if (!product.image_url) {
+        // 첫 번째 이미지를 메인 imageUrl로 업데이트 (이미 되어있지 않다면)
+        if (!product.imageUrl) {
           await supabase.from("products").update({ image_url: images[0] }).eq("id", product.id);
         }
+
       }
     }
 

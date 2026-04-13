@@ -1,17 +1,15 @@
-import type { Product } from "@/features/products/types";
+import type { Product, InventoryItem } from "@/features/products/types";
 
-export interface InventoryItem extends Omit<Product, "status" | "price" | "stock"> {
-  currentStock: number;
-  minStock: number;
-}
 
 export const mockProducts: Product[] = [
   {
     id: "1",
     name: "아크릴 키링 - 봄날의 토끼",
+    description: "귀여운 토끼 캐릭터가 그려진 고품질 아크릴 키링입니다.",
     imageUrl: "/placeholder.svg?height=60&width=60",
     category: "키링",
     price: 8000,
+    comparePrice: 10000,
     stock: 45,
     status: "active",
     sku: "KEYRING-001",
@@ -19,9 +17,11 @@ export const mockProducts: Product[] = [
   {
     id: "2",
     name: "마스킹 테이프 세트 (5개입)",
+    description: "다양한 패턴의 마스킹 테이프 5종 세트입니다.",
     imageUrl: "/placeholder.svg?height=60&width=60",
     category: "문구",
     price: 12000,
+    comparePrice: 15000,
     stock: 120,
     status: "active",
     sku: "TAPE-001",
@@ -29,9 +29,11 @@ export const mockProducts: Product[] = [
   {
     id: "3",
     name: "일러스트 엽서 10종 세트",
+    description: "감성적인 일러스트가 담긴 엽서 10종 세트입니다.",
     imageUrl: "/placeholder.svg?height=60&width=60",
     category: "엽서",
     price: 15000,
+    comparePrice: 20000,
     stock: 0,
     status: "sold_out",
     sku: "POSTCARD-001",
@@ -39,9 +41,11 @@ export const mockProducts: Product[] = [
   {
     id: "4",
     name: "캔버스 에코백 - 고양이 패턴",
+    description: "튼튼한 캔버스 재질의 고양이 패턴 에코백입니다.",
     imageUrl: "/placeholder.svg?height=60&width=60",
     category: "패브릭",
     price: 22000,
+    comparePrice: null,
     stock: 32,
     status: "active",
     sku: "BAG-001",
@@ -49,9 +53,11 @@ export const mockProducts: Product[] = [
   {
     id: "5",
     name: "스티커팩 - 귀여운 동물들",
+    description: "다양한 동물 캐릭터 스티커가 들어있는 팩입니다.",
     imageUrl: "/placeholder.svg?height=60&width=60",
     category: "스티커",
     price: 5000,
+    comparePrice: 7000,
     stock: 200,
     status: "active",
     sku: "STICKER-001",
@@ -59,9 +65,11 @@ export const mockProducts: Product[] = [
   {
     id: "6",
     name: "포토카드 홀더 바인더",
+    description: "소중한 포토카드를 보관할 수 있는 바인더입니다.",
     imageUrl: "/placeholder.svg?height=60&width=60",
     category: "문구",
     price: 18000,
+    comparePrice: null,
     stock: 8,
     status: "active",
     sku: "BINDER-001",
@@ -69,9 +77,11 @@ export const mockProducts: Product[] = [
   {
     id: "7",
     name: "아크릴 스탠드 - 캐릭터 A",
+    description: "캐릭터 A 일러스트 아크릴 스탠드입니다.",
     imageUrl: "/placeholder.svg?height=60&width=60",
     category: "아크릴",
     price: 25000,
+    comparePrice: 30000,
     stock: 0,
     status: "hidden",
     sku: "STAND-001",
@@ -79,14 +89,17 @@ export const mockProducts: Product[] = [
   {
     id: "8",
     name: "미니 포스터 A3 사이즈",
+    description: "인테리어 소품으로 좋은 A3 사이즈 미니 포스터입니다.",
     imageUrl: "/placeholder.svg?height=60&width=60",
     category: "포스터",
     price: 10000,
+    comparePrice: 12000,
     stock: 55,
     status: "active",
     sku: "POSTER-001",
   },
 ];
+
 
 export const mockInventoryItems: InventoryItem[] = mockProducts.map(
   (product) => ({
@@ -97,5 +110,8 @@ export const mockInventoryItems: InventoryItem[] = mockProducts.map(
     category: product.category,
     currentStock: product.stock, // stock 값을 currentStock으로 초기화
     minStock: 15, // 목업 테스트용 일괄 설정
+    description: product.description ?? null,
+    comparePrice: product.comparePrice ?? null,
   })
 );
+

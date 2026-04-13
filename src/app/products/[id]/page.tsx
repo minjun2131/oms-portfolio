@@ -21,30 +21,14 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   const supabase = await createClient();
   
   try {
-    const raw = await getProductById(supabase as any, id) as any;
-    
-    if (!raw) {
+    const product = await getProductById(supabase, id);
+
+    if (!product) {
       notFound();
     }
 
-    // DB 레코드(snake_case)를 UI 타입(Product, camelCase)으로 매핑
-    const product: Product = {
-      ...raw,
-      comparePrice: raw.compare_price ?? null,
-      stock: raw.stock_quantity ?? 0,
-      imageUrl: raw.image_url,
-      images: raw.product_images?.map((img: any) => ({
-        id: img.id,
-        url: img.url,
-        orderIndex: img.order_index
-      })) || [],
-      shopName: raw.shops?.name,
-      shippingFee: raw.shipping_fee ?? 0,
-      createdAt: raw.created_at,
-      updatedAt: raw.updated_at,
-    };
-
     return <ProductDetail product={product} />;
+
 
   } catch (error) {
     console.error("Failed to fetch product:", error);

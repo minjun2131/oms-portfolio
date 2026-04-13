@@ -21,6 +21,7 @@ export async function updateProductAction(
     const rawData = {
       id: formData.get("id"),
       name: formData.get("name"),
+      description: formData.get("description"),
       price: formData.get("price"),
       stock_quantity: formData.get("stock_quantity"),
       shopName: formData.get("shopName"),

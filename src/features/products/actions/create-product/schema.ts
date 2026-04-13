@@ -5,6 +5,11 @@ export const createProductSchema = z.object({
     .string()
     .min(2, { message: "상품명은 최소 2자 이상이어야 합니다." })
     .max(100, { message: "상품명은 최대 100자까지 가능합니다." }),
+  description: z
+    .string()
+    .max(1000, { message: "상품 설명은 최대 1000자까지 가능합니다." })
+    .optional()
+    .nullable(),
   price: z.coerce
     .number({ message: "가격은 숫자로 입력해야 합니다." })
     .min(0, { message: "가격은 0 이상이어야 합니다." }),

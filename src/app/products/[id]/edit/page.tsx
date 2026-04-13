@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ProductForm } from "@/features/products/components";
+import { getProductById } from "@/features/products/services/get-product-by-id";
 
 export const metadata: Metadata = {
   title: "상품 수정 | OMS 관리자",
@@ -17,14 +18,12 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
 
   // 서버에서 상품 데이터 조회
   const supabase = await createClient();
-  const { data: product, error } = await (supabase.from("products") as any)
-    .select("*")
-    .eq("id", id)
-    .single();
+  const product = await getProductById(supabase, id);
 
-  if (error || !product) {
+  if (!product) {
     notFound();
   }
 
   return <ProductForm mode="edit" initialData={product} />;
 }
+

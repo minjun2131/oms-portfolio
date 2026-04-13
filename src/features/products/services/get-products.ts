@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "@/types/database.types";
 import { getProductsQueryBuilder } from "../query-builder/get-products.builder";
 import type { Product, ProductFilters } from "../types";
+import { mapToProduct } from "./mapper";
 
 export interface GetProductsResult {
   data: Product[];
@@ -10,23 +11,7 @@ export interface GetProductsResult {
   nextPage: number | null;
 }
 
-/**
- * DB 레코드(snake_case)를 Product UI 타입(camelCase)으로 변환합니다.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mapToProduct = (row: any): Product => ({
-  id: row.id,
-  name: row.name,
-  category: row.category,
-  price: row.price,
-  stock: row.stock ?? 0,
-  status: row.status,
-  sku: row.sku,
-  imageUrl: row.image_url ?? null,
-  shopName: row.shops?.name,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-});
+
 
 /**
  * 2단계: 상품 목록 조회 서비스

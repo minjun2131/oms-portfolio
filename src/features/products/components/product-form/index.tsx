@@ -45,7 +45,11 @@ export function ProductForm({ mode = "create", initialData }: ProductFormProps) 
     null
   );
 
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<string[]>(
+    initialData?.images?.map((img: any) => img.url) || 
+    (initialData?.imageUrl ? [initialData.imageUrl] : [])
+  );
+
   const [category, setCategory] = useState(initialData?.category ?? "");
   const [isPublished, setIsPublished] = useState(
     initialData ? initialData.status !== "hidden" : true
@@ -171,6 +175,25 @@ export function ProductForm({ mode = "create", initialData }: ProductFormProps) 
                     <p className="text-xs text-destructive">{getFieldError("name")}</p>
                   )}
                 </div>
+
+                <div className="space-y-2">
+                  <label
+                    htmlFor="description"
+                    className="text-sm font-medium leading-none"
+                  >
+                    상품 설명
+                  </label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    placeholder="상품에 대한 상세 설명을 입력하세요"
+                    defaultValue={initialData?.description ?? ""}
+                    className="min-h-[150px] resize-none"
+                  />
+                  {getFieldError("description") && (
+                    <p className="text-xs text-destructive">{getFieldError("description")}</p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -258,7 +281,7 @@ export function ProductForm({ mode = "create", initialData }: ProductFormProps) 
                         name="compare_price"
                         type="number"
                         placeholder="0"
-                        defaultValue={initialData?.compare_price ?? ""}
+                        defaultValue={initialData?.comparePrice ?? ""}
                         className="h-11 pr-10"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -276,7 +299,7 @@ export function ProductForm({ mode = "create", initialData }: ProductFormProps) 
                         name="shipping_fee"
                         type="number"
                         placeholder="0"
-                        defaultValue={initialData?.shipping_fee ?? "0"}
+                        defaultValue={initialData?.shippingFee ?? "0"}
                         className="h-11 pr-10"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -305,7 +328,7 @@ export function ProductForm({ mode = "create", initialData }: ProductFormProps) 
                     id="shopName"
                     name="shopName"
                     placeholder="상점명 입력"
-                    defaultValue={initialData?.shops?.name ?? initialData?.shopName ?? ""}
+                    defaultValue={initialData?.shopName ?? ""}
                     className="h-11"
                   />
                 </div>
@@ -322,12 +345,13 @@ export function ProductForm({ mode = "create", initialData }: ProductFormProps) 
                     name="stock_quantity"
                     type="number"
                     placeholder="0"
-                    defaultValue={initialData?.stock_quantity ?? ""}
+                    defaultValue={initialData?.stock ?? ""}
                     className="h-11"
                   />
                 </div>
               </CardContent>
             </Card>
+
           </div>
         </div>
       </form>
