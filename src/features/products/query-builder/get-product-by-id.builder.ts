@@ -11,7 +11,8 @@ export const getProductByIdQueryBuilder = (
 ) => {
   return supabaseClient
     .from("products")
-    .select("*, shops(name)")
+    .select("*, shops(name), product_images(*)")
     .eq("id", id)
+    .order("order_index", { foreignTable: "product_images", ascending: true })
     .single();
 };

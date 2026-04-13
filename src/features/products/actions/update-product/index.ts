@@ -21,11 +21,11 @@ export async function updateProductAction(
     const rawData = {
       id: formData.get("id"),
       name: formData.get("name"),
-      description: formData.get("description"),
       price: formData.get("price"),
       stock_quantity: formData.get("stock_quantity"),
-      category: formData.get("category"),
       shopName: formData.get("shopName"),
+      compare_price: formData.get("compare_price"),
+      shipping_fee: formData.get("shipping_fee"),
     };
 
     // 2. Zod 유효성 검사
@@ -60,14 +60,35 @@ export async function updateProductAction(
       ...updateFields,
       shop_id,
       status: formData.get("status") === "false" ? "hidden" : "active",
-      sku: formData.get("sku") || null,
-      image_url: formData.get("image_url") || null,
+      sku: (formData.get("sku") as string) || null,
+      image_url: (formData.get("image_url") as string) || null,
     };
 
-    // 6. 서비스 호출
+    // 6. 서비스 호출 (기본 정보 업데이트)
     const product = await updateProduct(supabase, id, productData);
 
-    // 7. 캐시 무효화 (목록 + 상세 페이지)
+    // 7. 이미지 동기화 (기존 이미지 삭제 후 신규 등록 - 단순화된 방식)
+    const imagesJson = formData.get("images") as string;
+    if (imagesJson) {
+      const images = JSON.parse(imagesJson);
+      if (Array.isArray(images) && images.length > 0) {
+        // 기존 이미지 데이터 삭제
+        await supabase.from("product_images").delete().eq("product_id", id);
+        
+        // 신규 이미지 데이터 등록
+        const imageInserts = images.map((url: string, index: number) => ({
+          product_id: id,
+          url,
+          order_index: index,
+        }));
+        await supabase.from("product_images").insert(imageInserts);
+        
+        // image_url (대표 이미지) 동기화
+        await supabase.from("products").update({ image_url: images[0] }).eq("id", id);
+      }
+    }
+
+    // 8. 캐시 무효화 (목록 + 상세 페이지)
     revalidatePath(ROUTES.PRODUCTS);
     revalidatePath(`${ROUTES.PRODUCTS}/${id}`);
 

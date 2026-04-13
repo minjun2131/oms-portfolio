@@ -383,10 +383,12 @@ export function ProductList() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem className="gap-2 focus:bg-accent focus:text-accent-foreground cursor-pointer flex items-center">
-                            <Eye className="h-4 w-4" />
-                            상세 보기
-                          </DropdownMenuItem>
+                          <Link href={`/products/${product.id}`}>
+                            <DropdownMenuItem className="gap-2 focus:bg-accent focus:text-accent-foreground cursor-pointer flex items-center">
+                              <Eye className="h-4 w-4" />
+                              상세 보기
+                            </DropdownMenuItem>
+                          </Link>
                           <Link href={`/products/${product.id}/edit`}>
                             <DropdownMenuItem className="gap-2 focus:bg-accent focus:text-accent-foreground cursor-pointer flex items-center">
                               <Edit2 className="h-4 w-4" />
