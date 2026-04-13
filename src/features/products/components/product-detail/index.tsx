@@ -11,9 +11,9 @@ interface ProductDetailProps {
 }
 
 export const ProductDetail = ({ product }: ProductDetailProps) => {
-  const images = (product.product_images && product.product_images.length > 0)
-    ? product.product_images.map((img) => img.url)
-    : [product.image_url].filter(Boolean);
+  const images = (product.images && product.images.length > 0)
+    ? product.images.map((img) => img.url)
+    : [product.imageUrl].filter(Boolean);
 
   return (
     <div className="space-y-6">
@@ -113,8 +113,8 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
                     정가
                   </span>
                   <p className="text-lg font-medium text-muted-foreground line-through decoration-destructive/30">
-                    {product.compare_price
-                      ? `${product.compare_price.toLocaleString()}원`
+                    {product.comparePrice
+                      ? `${product.comparePrice.toLocaleString()}원`
                       : "-"}
                   </p>
                 </div>
@@ -123,9 +123,9 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
                     배송비
                   </span>
                   <p className="text-lg font-medium">
-                    {product.shipping_fee === 0
+                    {product.shippingFee === 0
                       ? "무료 배송"
-                      : `${product.shipping_fee?.toLocaleString() || "0"}원`}
+                      : `${product.shippingFee?.toLocaleString() || "0"}원`}
                   </p>
                 </div>
               </div>
@@ -151,7 +151,7 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
                     <Store className="h-4 w-4" />
                   </div>
                   <p className="font-semibold">
-                    {product.shops?.name || "기본 상점"}
+                    {product.shopName || "기본 상점"}
                   </p>
                 </div>
               </div>
@@ -165,7 +165,7 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
                     <Package className="h-4 w-4" />
                   </div>
                   <p className="text-lg font-bold">
-                    {product.stock_quantity?.toLocaleString() || "0"}개
+                    {product.stock?.toLocaleString() || "0"}개
                   </p>
                 </div>
               </div>
@@ -177,11 +177,11 @@ export const ProductDetail = ({ product }: ProductDetailProps) => {
             <CardContent className="p-4 text-[11px] text-muted-foreground space-y-1">
               <div className="flex justify-between">
                 <span>등록일</span>
-                <span>{product.created_at ? new Date(product.created_at).toLocaleDateString() : "-"}</span>
+                <span>{product.createdAt ? new Date(product.createdAt).toLocaleDateString() : "-"}</span>
               </div>
               <div className="flex justify-between">
                 <span>최종 수정일</span>
-                <span>{product.updated_at ? new Date(product.updated_at).toLocaleDateString() : "-"}</span>
+                <span>{product.updatedAt ? new Date(product.updatedAt).toLocaleDateString() : "-"}</span>
               </div>
             </CardContent>
           </Card>
