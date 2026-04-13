@@ -34,9 +34,7 @@ export class ReportsQueryBuilder {
         price,
         quantity,
         product:products (
-          category:categories (
-            name
-          )
+          category
         ),
         order:orders (
           status,

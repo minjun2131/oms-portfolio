@@ -128,7 +128,7 @@ export function Sidebar({ profile }: SidebarProps) {
     return (
     <>
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-sidebar-border">
+      <Link href="/" className="flex items-center gap-3 px-6 py-5 border-b border-sidebar-border hover:opacity-80 transition-opacity">
         <h1 className="flex items-center gap-2">
           <Image
             src="/logo.png"
@@ -141,7 +141,7 @@ export function Sidebar({ profile }: SidebarProps) {
             셀러플로우
           </span>
         </h1>
-      </div>
+      </Link>
 
       {/* Main Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4">
@@ -277,7 +277,7 @@ export function Sidebar({ profile }: SidebarProps) {
     <>
       {/* Mobile Menu Button */}
       <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-sidebar border-b border-sidebar-border px-4 py-3 lg:hidden">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <Image
             src="/logo.png"
             alt="셀러플로우"
@@ -288,7 +288,7 @@ export function Sidebar({ profile }: SidebarProps) {
           <span className="text-base font-semibold text-sidebar-foreground">
             셀러플로우
           </span>
-        </div>
+        </Link>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="h-9 w-9">
             <Bell className="h-5 w-5 text-sidebar-foreground/70" />

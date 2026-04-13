@@ -56,14 +56,24 @@ const formatCurrency = (value: number) => {
   return `${(value / 10000).toFixed(0)}만`;
 };
 
-export function SalesChart() {
-  const [view, setView] = useState<"weekly" | "monthly" | "yearly">("monthly");
+interface ChartDataPoint {
+  name: string;
+  매출: number;
+}
 
-  const chartData = {
-    weekly: weeklyData,
-    monthly: monthlyData,
-    yearly: yearlyData,
-  }[view];
+interface SalesChartProps {
+  data?: ChartDataPoint[];
+}
+
+const PREPARING_DATA = [
+  { name: "데이터 준비중", 매출: 0 },
+];
+
+export function SalesChart({ data }: SalesChartProps) {
+  const [view, setView] = useState<"weekly" | "monthly" | "yearly">("weekly");
+
+  // 데이터 결정 로직: 주간일 때는 진짜 데이터를, 나머지는 준비중 데이터를 보여줍니다.
+  const chartData = view === "weekly" ? (data && data.length > 0 ? data : weeklyData) : PREPARING_DATA;
 
   return (
     <Card className="border-border/50 shadow-sm">

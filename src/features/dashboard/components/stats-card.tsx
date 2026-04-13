@@ -5,7 +5,7 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 interface StatsCardProps {
   title: string;
   value: string;
-  change: number;
+  change?: number;
   icon: React.ReactNode;
   iconBgColor?: string;
 }
@@ -17,7 +17,7 @@ export function StatsCard({
   icon,
   iconBgColor = "bg-primary/10",
 }: StatsCardProps) {
-  const isPositive = change >= 0;
+  const isPositive = change !== undefined && change >= 0;
 
   return (
     <Card className="border-border/50 shadow-sm hover:shadow-md transition-shadow">
@@ -26,23 +26,25 @@ export function StatsCard({
           <div className="space-y-3">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
             <p className="text-2xl font-bold text-card-foreground">{value}</p>
-            <div className="flex items-center gap-1.5">
-              {isPositive ? (
-                <TrendingUp className="h-4 w-4 text-[oklch(0.65_0.18_145)]" />
-              ) : (
-                <TrendingDown className="h-4 w-4 text-destructive" />
-              )}
-              <span
-                className={cn(
-                  "text-sm font-medium",
-                  isPositive ? "text-[oklch(0.65_0.18_145)]" : "text-destructive"
+            {change !== undefined && (
+              <div className="flex items-center gap-1.5">
+                {isPositive ? (
+                  <TrendingUp className="h-4 w-4 text-[oklch(0.65_0.18_145)]" />
+                ) : (
+                  <TrendingDown className="h-4 w-4 text-destructive" />
                 )}
-              >
-                {isPositive ? "+" : ""}
-                {change}%
-              </span>
-              <span className="text-sm text-muted-foreground">전월 대비</span>
-            </div>
+                <span
+                  className={cn(
+                    "text-sm font-medium",
+                    isPositive ? "text-[oklch(0.65_0.18_145)]" : "text-destructive"
+                  )}
+                >
+                  {isPositive ? "+" : ""}
+                  {change}%
+                </span>
+                <span className="text-sm text-muted-foreground">전월 대비</span>
+              </div>
+            )}
           </div>
           <div
             className={cn(

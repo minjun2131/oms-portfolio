@@ -25,7 +25,7 @@ export class ReportsService {
   }
 
   // 결제 완료 이상의 상태 (pending 제외, 정상 주문)
-  private readonly REVENUE_STATUSES = ["paid", "preparing", "shipping", "shipped", "delivered"];
+  private readonly REVENUE_STATUSES = ["paid", "preparing", "shipping", "shipped", "delivered", "completed"];
   // 취소/환불 상태
   private readonly REFUND_STATUSES = ["cancelled"];
 
@@ -66,7 +66,7 @@ export class ReportsService {
     const rawData = await this.queryBuilder.getCategorySales(from, to);
     
     const categories = rawData.reduce((acc: any, current: any) => {
-      const categoryName = current.product?.category?.name || "기타";
+      const categoryName = current.product?.category || "미분류";
       
       if (this.REVENUE_STATUSES.includes(current.order?.status)) {
         if (!acc[categoryName]) acc[categoryName] = 0;

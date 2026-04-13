@@ -1,7 +1,7 @@
 import React from "react";
 import { ShoppingCart, Clock, Truck, CheckCircle2 } from "lucide-react";
 
-export type OrderStatus = "paid" | "preparing" | "shipping" | "shipped" | "delivered" | "cancelled" | "pending";
+export type OrderStatus = "paid" | "preparing" | "shipping" | "shipped" | "delivered" | "cancelled" | "pending" | "completed";
 
 export interface StatusConfig {
   label: string;
@@ -32,6 +32,10 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatus, StatusConfig> = {
   delivered: {
     label: "배송완료",
     className: "bg-slate-100 text-slate-600", // 회색
+  },
+  completed: {
+    label: "주문 완료",
+    className: "bg-emerald-100 text-emerald-700", // 녹색계열 (배송까지 완료된 최종 상태)
   },
   cancelled: {
     label: "취소",

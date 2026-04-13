@@ -3,38 +3,49 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
-const products = [
-  {
-    name: "아크릴 키링 세트 (6종)",
-    sales: 234,
-    revenue: "₩4,680,000",
-    stock: 45,
-    progress: 95,
-  },
-  {
-    name: "포토카드 풀세트",
-    sales: 189,
-    revenue: "₩8,505,000",
-    stock: 23,
-    progress: 78,
-  },
-  {
-    name: "미니 포스터 (A4)",
-    sales: 156,
-    revenue: "₩2,340,000",
-    stock: 89,
-    progress: 65,
-  },
-  {
-    name: "스티커 팩 (5종)",
-    sales: 142,
-    revenue: "₩1,775,000",
-    stock: 156,
-    progress: 58,
-  },
-];
+interface TopProduct {
+  name: string;
+  sales: number;
+  revenue: number;
+  stock: number;
+  progress: number;
+}
 
-export function TopProducts() {
+interface TopProductsProps {
+  data?: TopProduct[];
+}
+
+export function TopProducts({ data = [] }: TopProductsProps) {
+  const displayProducts = data.length > 0 ? data : [
+    {
+      name: "아크릴 키링 세트 (6종)",
+      sales: 234,
+      revenue: 4680000,
+      stock: 45,
+      progress: 95,
+    },
+    {
+      name: "포토카드 풀세트",
+      sales: 189,
+      revenue: 8505000,
+      stock: 23,
+      progress: 78,
+    },
+    {
+      name: "미니 포스터 (A4)",
+      sales: 156,
+      revenue: 2340000,
+      stock: 89,
+      progress: 65,
+    },
+    {
+      name: "스티커 팩 (5종)",
+      sales: 142,
+      revenue: 1775000,
+      stock: 156,
+      progress: 58,
+    },
+  ];
   return (
     <Card className="border-border/50 shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between pb-4">
@@ -50,7 +61,7 @@ export function TopProducts() {
         </Button>
       </CardHeader>
       <CardContent className="space-y-6">
-        {products.map((product, index) => (
+        {displayProducts.map((product, index) => (
           <div key={product.name} className="space-y-3">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
@@ -67,7 +78,7 @@ export function TopProducts() {
                 </div>
               </div>
               <p className="text-sm font-semibold text-card-foreground whitespace-nowrap">
-                {product.revenue}
+                ₩{product.revenue.toLocaleString()}
               </p>
             </div>
             <Progress value={product.progress} className="h-1.5" />
